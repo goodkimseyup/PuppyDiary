@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -23,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.puppydiary.data.model.PuppyData
+import com.example.puppydiary.ui.theme.AppColors
 import com.example.puppydiary.utils.getBreedEmoji
 import java.io.File
 
@@ -41,29 +43,60 @@ fun PuppyProfileCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .shadow(
+                elevation = 16.dp,
+                shape = RoundedCornerShape(28.dp),
+                ambientColor = AppColors.Primary.copy(alpha = 0.2f),
+                spotColor = AppColors.Primary.copy(alpha = 0.2f)
+            )
+            .clip(RoundedCornerShape(28.dp))
             .background(
-                brush = Brush.horizontalGradient(
+                brush = Brush.linearGradient(
                     colors = listOf(
-                        Color(0xFFE91E63),
-                        Color(0xFF9C27B0)
+                        AppColors.Primary,
+                        AppColors.Secondary
                     )
                 )
             )
     ) {
+        // 배경 장식 원
+        Box(
+            modifier = Modifier
+                .size(120.dp)
+                .offset(x = (-30).dp, y = (-30).dp)
+                .background(
+                    Color.White.copy(alpha = 0.1f),
+                    shape = CircleShape
+                )
+        )
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .align(Alignment.BottomEnd)
+                .offset(x = 20.dp, y = 20.dp)
+                .background(
+                    Color.White.copy(alpha = 0.08f),
+                    shape = CircleShape
+                )
+        )
+        
         // 수정 버튼 (오른쪽 상단)
         if (onEditClick != null) {
-            IconButton(
+            Surface(
                 onClick = onEditClick,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(8.dp)
+                    .padding(16.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = Color.White.copy(alpha = 0.2f)
             ) {
                 Icon(
                     Icons.Default.Edit,
                     contentDescription = "프로필 수정",
-                    tint = Color.White.copy(alpha = 0.9f),
-                    modifier = Modifier.size(20.dp)
+                    tint = Color.White,
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .size(18.dp)
                 )
             }
         }
@@ -73,16 +106,17 @@ fun PuppyProfileCard(
             Surface(
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(12.dp),
-                color = Color.White.copy(alpha = 0.9f),
-                shape = RoundedCornerShape(12.dp)
+                    .padding(16.dp),
+                color = Color.White,
+                shape = RoundedCornerShape(16.dp),
+                shadowElevation = 4.dp
             ) {
                 Text(
                     text = "🎂 $birthdayDday",
-                    fontSize = 12.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFE91E63),
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    color = AppColors.Primary,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                 )
             }
         }
@@ -90,17 +124,18 @@ fun PuppyProfileCard(
         Row(
             modifier = Modifier
                 .padding(24.dp)
-                .padding(top = if (birthdayDday != null) 16.dp else 0.dp)
+                .padding(top = if (birthdayDday != null) 24.dp else 0.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 프로필 이미지
             Box(
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(90.dp)
+                    .shadow(8.dp, CircleShape)
                     .clip(CircleShape)
                     .background(Color.White)
-                    .border(2.dp, Color.White, CircleShape)
+                    .border(3.dp, Color.White.copy(alpha = 0.5f), CircleShape)
                     .then(
                         if (onImageClick != null) {
                             Modifier.clickable { onImageClick() }
@@ -123,49 +158,80 @@ fun PuppyProfileCard(
                     } else {
                         Text(
                             text = getBreedEmoji(puppyData.breed),
-                            fontSize = 40.sp
+                            fontSize = 44.sp
                         )
                     }
                 } else {
                     Text(
                         text = getBreedEmoji(puppyData.breed),
-                        fontSize = 40.sp
+                        fontSize = 44.sp
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(20.dp))
 
             Column {
                 Text(
                     text = puppyData.name,
-                    fontSize = 24.sp,
+                    fontSize = 26.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
-                Text(
-                    text = puppyData.breed,
-                    fontSize = 16.sp,
-                    color = Color.White.copy(alpha = 0.9f)
-                )
-                Text(
-                    text = "나이: $age",
-                    fontSize = 14.sp,
-                    color = Color.White.copy(alpha = 0.9f)
-                )
-                Text(
-                    text = "현재 몸무게: ${currentWeight}kg",
-                    fontSize = 14.sp,
-                    color = Color.White.copy(alpha = 0.9f)
-                )
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                // 견종 배지
+                Surface(
+                    color = Color.White.copy(alpha = 0.2f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = puppyData.breed,
+                        fontSize = 13.sp,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // 정보 행
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Column {
+                        Text(
+                            text = "나이",
+                            fontSize = 11.sp,
+                            color = Color.White.copy(alpha = 0.7f)
+                        )
+                        Text(
+                            text = age,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = "몸무게",
+                            fontSize = 11.sp,
+                            color = Color.White.copy(alpha = 0.7f)
+                        )
+                        Text(
+                            text = "${currentWeight}kg",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White
+                        )
+                    }
+                }
                 
                 // 프로필 편집 힌트
                 if (onImageClick != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "📷 사진을 탭하여 변경",
+                        text = "📷 사진 탭하여 변경",
                         fontSize = 11.sp,
-                        color = Color.White.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(top = 4.dp)
+                        color = Color.White.copy(alpha = 0.6f)
                     )
                 }
             }

@@ -31,7 +31,10 @@ import com.example.puppydiary.ui.components.PuppyProfileCard
 import com.example.puppydiary.viewmodel.PuppyViewModel
 import com.example.puppydiary.utils.allBreedList
 import com.example.puppydiary.utils.getBreedEmoji
+import com.example.puppydiary.ui.theme.AppColors
 import androidx.navigation.NavController
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.shadow
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -140,7 +143,7 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp),
+                        .padding(bottom = 20.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -148,42 +151,53 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "🐾 나의반쪽",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
+                            text = "나의반쪽",
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                         // 다견 표시 (2마리 이상일 때)
                         if (allPuppies.size > 1) {
                             Surface(
-                                modifier = Modifier.padding(start = 8.dp),
-                                color = Color(0xFFE91E63).copy(alpha = 0.1f),
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                                modifier = Modifier.padding(start = 10.dp),
+                                color = AppColors.Primary.copy(alpha = 0.12f),
+                                shape = RoundedCornerShape(20.dp)
                             ) {
                                 Text(
                                     text = "${allPuppies.size}마리",
                                     fontSize = 12.sp,
-                                    color = Color(0xFFE91E63),
-                                    fontWeight = FontWeight.Medium,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                    color = AppColors.Primary,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                                 )
                             }
                         }
                     }
-                    Row {
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         // 강아지 전환 버튼
-                        IconButton(onClick = { showPuppySelector = true }) {
+                        Surface(
+                            onClick = { showPuppySelector = true },
+                            shape = RoundedCornerShape(12.dp),
+                            color = AppColors.Secondary.copy(alpha = 0.1f)
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.Face,
                                 contentDescription = "강아지 선택",
-                                tint = Color(0xFF9C27B0)
+                                tint = AppColors.Secondary,
+                                modifier = Modifier.padding(10.dp)
                             )
                         }
                         // 검색 버튼
-                        IconButton(onClick = { showSearchBar = !showSearchBar }) {
+                        Surface(
+                            onClick = { showSearchBar = !showSearchBar },
+                            shape = RoundedCornerShape(12.dp),
+                            color = AppColors.Primary.copy(alpha = 0.1f)
+                        ) {
                             Icon(
                                 imageVector = if (showSearchBar) Icons.Default.Close else Icons.Default.Search,
                                 contentDescription = "검색",
-                                tint = Color(0xFFE91E63)
+                                tint = AppColors.Primary,
+                                modifier = Modifier.padding(10.dp)
                             )
                         }
                     }
@@ -191,29 +205,45 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
 
                 // 검색바
                 if (showSearchBar) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = { Text("일기, 사진, 접종 검색...") },
-                        leadingIcon = {
-                            Icon(Icons.Default.Search, contentDescription = null)
-                        },
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Default.Clear, contentDescription = "지우기")
-                                }
-                            }
-                        },
-                        singleLine = true,
+                    Surface(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 16.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFFE91E63),
-                            cursorColor = Color(0xFFE91E63)
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ) {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = {
+                                Text(
+                                    "일기, 사진, 접종 검색...",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Search,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { searchQuery = "" }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "지우기")
+                                    }
+                                }
+                            },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent,
+                                cursorColor = AppColors.Primary
+                            )
                         )
-                    )
+                    }
                 }
 
                 puppyData?.let { data ->
@@ -265,30 +295,57 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
         }
 
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(
+                        elevation = 4.dp,
+                        shape = RoundedCornerShape(20.dp),
+                        ambientColor = AppColors.Primary.copy(alpha = 0.1f),
+                        spotColor = AppColors.Primary.copy(alpha = 0.1f)
+                    ),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Column(modifier = Modifier.padding(18.dp)) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(bottom = 12.dp)
                     ) {
-                        Icon(
-                            if (searchQuery.isNotEmpty()) Icons.Default.Search else Icons.Default.Favorite,
-                            contentDescription = null,
-                            tint = if (searchQuery.isNotEmpty()) Color(0xFFE91E63) else Color.Red,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(
+                                    if (searchQuery.isNotEmpty()) 
+                                        AppColors.Primary.copy(alpha = 0.12f)
+                                    else 
+                                        AppColors.Warm.copy(alpha = 0.12f),
+                                    shape = RoundedCornerShape(10.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                if (searchQuery.isNotEmpty()) Icons.Default.Search else Icons.Default.Favorite,
+                                contentDescription = null,
+                                tint = if (searchQuery.isNotEmpty()) AppColors.Primary else AppColors.Warm,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = if (searchQuery.isNotEmpty()) "검색 결과" else "최근 활동",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 17.sp,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
 
                     if (recentActivities.isEmpty() && searchQuery.isEmpty()) {
                         Text(
                             text = "아직 기록이 없습니다",
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 14.sp
                         )
                     }
@@ -869,7 +926,18 @@ fun ActivityCard(
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 4.dp,
+                shape = RoundedCornerShape(16.dp),
+                ambientColor = iconColor.copy(alpha = 0.1f),
+                spotColor = iconColor.copy(alpha = 0.1f)
+            ),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
         onClick = onClick
     ) {
         Row(
@@ -878,30 +946,48 @@ fun ActivityCard(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = iconColor,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
+            // 아이콘 배경
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(
+                        iconColor.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(12.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 15.sp
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 15.sp,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = subtitle,
                     fontSize = 12.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Text(
-                text = date,
-                fontSize = 12.sp,
-                color = Color.Gray
-            )
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = date,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
         }
     }
 }
@@ -916,30 +1002,47 @@ fun QuickActionButton(
     onClick: () -> Unit
 ) {
     Card(
-        modifier = modifier,
+        modifier = modifier
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(20.dp),
+                ambientColor = color.copy(alpha = 0.15f),
+                spotColor = color.copy(alpha = 0.15f)
+            ),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = color.copy(alpha = 0.1f)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         onClick = onClick
     ) {
         Column(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(vertical = 20.dp, horizontal = 16.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(32.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .background(
+                        color.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(16.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = label,
-                color = color,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Medium,
-                fontSize = 14.sp
+                fontSize = 13.sp
             )
         }
     }
