@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">PuppyDiary</string>
+    <string name="home">홈</string>
+    <string name="stats">통계</string>
+    <string name="diary">일기</string>
+    <string name="puppy_diary">🐾 펫 다이어리</string>
+    <string name="weight_record">몸무게 기록</string>
+    <string name="vaccination_record">예방접종 기록</string>
+    <string name="diary_entry">일기 작성</string>
+    <string name="recent_activities">최근 활동</string>
+    <string name="growth_record">성장 기록</string>
+    <string name="weight_change">몸무게 변화</string>
+    <string name="vaccination_status">예방접종 현황</string>
+    <string name="achievement_unlocked">성취 달성!</string>
+    <string name="vaccination_reminder">예방접종 알림</string>
+    <string name="export_data">데이터 내보내기</string>
+    <string name="photo_album">사진 앨범</string>
+    <string name="health_score">건강 점수</string>
+    <string name="weekly">주간</string>
+    <string name="monthly">월간</string>
+    <string name="three_months">3개월</string>
+    <string name="yearly">연간</string>
+</resources>
