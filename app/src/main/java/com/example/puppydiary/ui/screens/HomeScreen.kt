@@ -66,45 +66,47 @@ fun HomeScreen(viewModel: PuppyViewModel) {
     val currentWeight = weightRecords.lastOrNull()?.weight ?: 0f
 
     // 최근 활동 통합 (날짜순 정렬)
-    val recentActivities = remember(diaryEntries, weightRecords, vaccinations, photoMemories) {
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        
-        val activities = mutableListOf<RecentActivity>()
-        
-        // 일기 추가
-        diaryEntries.forEach { entry ->
-            val timestamp = try {
-                dateFormat.parse(entry.date)?.time ?: 0L
-            } catch (e: Exception) { 0L }
-            activities.add(RecentActivity.Diary(entry, entry.date, timestamp))
+    val recentActivities by remember {
+        derivedStateOf {
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+            val activities = mutableListOf<RecentActivity>()
+
+            // 일기 추가
+            diaryEntries.forEach { entry ->
+                val timestamp = try {
+                    dateFormat.parse(entry.date)?.time ?: 0L
+                } catch (e: Exception) { 0L }
+                activities.add(RecentActivity.Diary(entry, entry.date, timestamp))
+            }
+
+            // 몸무게 추가
+            weightRecords.forEach { record ->
+                val timestamp = try {
+                    dateFormat.parse(record.date)?.time ?: 0L
+                } catch (e: Exception) { 0L }
+                activities.add(RecentActivity.Weight(record, record.date, timestamp))
+            }
+
+            // 접종 추가
+            vaccinations.forEach { vaccine ->
+                val timestamp = try {
+                    dateFormat.parse(vaccine.date)?.time ?: 0L
+                } catch (e: Exception) { 0L }
+                activities.add(RecentActivity.Vaccine(vaccine, vaccine.date, timestamp))
+            }
+
+            // 사진 추가
+            photoMemories.forEach { photo ->
+                val timestamp = try {
+                    dateFormat.parse(photo.date)?.time ?: 0L
+                } catch (e: Exception) { 0L }
+                activities.add(RecentActivity.Photo(photo, photo.date, timestamp))
+            }
+
+            // 최신순 정렬 후 상위 5개
+            activities.sortedByDescending { it.timestamp }.take(5)
         }
-        
-        // 몸무게 추가
-        weightRecords.forEach { record ->
-            val timestamp = try {
-                dateFormat.parse(record.date)?.time ?: 0L
-            } catch (e: Exception) { 0L }
-            activities.add(RecentActivity.Weight(record, record.date, timestamp))
-        }
-        
-        // 접종 추가
-        vaccinations.forEach { vaccine ->
-            val timestamp = try {
-                dateFormat.parse(vaccine.date)?.time ?: 0L
-            } catch (e: Exception) { 0L }
-            activities.add(RecentActivity.Vaccine(vaccine, vaccine.date, timestamp))
-        }
-        
-        // 사진 추가
-        photoMemories.forEach { photo ->
-            val timestamp = try {
-                dateFormat.parse(photo.date)?.time ?: 0L
-            } catch (e: Exception) { 0L }
-            activities.add(RecentActivity.Photo(photo, photo.date, timestamp))
-        }
-        
-        // 최신순 정렬 후 상위 5개
-        activities.sortedByDescending { it.timestamp }.take(5)
     }
 
     var showWeightDialog by remember { mutableStateOf(false) }
