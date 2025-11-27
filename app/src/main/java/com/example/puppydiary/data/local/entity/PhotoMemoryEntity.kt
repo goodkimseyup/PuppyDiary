@@ -11,5 +11,6 @@ data class PhotoMemoryEntity(
     val date: String,
     val weight: Float? = null,
     val description: String = "",
-    val diaryEntryId: Long? = null
+    val diaryEntryId: Long? = null,
+    val createdAt: Long = System.currentTimeMillis()
 )

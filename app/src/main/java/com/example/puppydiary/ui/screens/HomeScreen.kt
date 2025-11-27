@@ -1,6 +1,7 @@
 package com.example.puppydiary.ui.screens
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -40,14 +41,6 @@ val breedList = listOf(
     "믹스견", "기타"
 )
 
-// 최근 활동 통합 타입
-sealed class RecentActivity(val date: String, val timestamp: Long) {
-    data class Weight(val record: WeightRecord, val d: String, val t: Long) : RecentActivity(d, t)
-    data class Vaccine(val vaccination: Vaccination, val d: String, val t: Long) : RecentActivity(d, t)
-    data class Diary(val entry: DiaryEntry, val d: String, val t: Long) : RecentActivity(d, t)
-    data class Photo(val photo: PhotoMemory, val d: String, val t: Long) : RecentActivity(d, t)
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(viewModel: PuppyViewModel) {
@@ -57,6 +50,15 @@ fun HomeScreen(viewModel: PuppyViewModel) {
     val weightRecords by viewModel.weightRecords.collectAsState()
     val vaccinations by viewModel.vaccinations.collectAsState()
     val photoMemories by viewModel.photoMemories.collectAsState()
+    val recentActivities by viewModel.recentActivities.collectAsState()
+
+    // 디버깅용 로그
+    LaunchedEffect(recentActivities) {
+        Log.d("PuppyDiary", "HomeScreen recentActivities: ${recentActivities.size} items")
+        recentActivities.forEach { activity ->
+            Log.d("PuppyDiary", "  - ${activity::class.simpleName}: $activity")
+        }
+    }
 
     // Snackbar 상태
     val snackbarHostState = remember { SnackbarHostState() }
@@ -64,50 +66,6 @@ fun HomeScreen(viewModel: PuppyViewModel) {
 
     // 현재 몸무게 (weightRecords가 변경될 때마다 자동 업데이트)
     val currentWeight = weightRecords.lastOrNull()?.weight ?: 0f
-
-    // 최근 활동 통합 (날짜순 정렬)
-    val recentActivities by remember {
-        derivedStateOf {
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-
-            val activities = mutableListOf<RecentActivity>()
-
-            // 일기 추가
-            diaryEntries.forEach { entry ->
-                val timestamp = try {
-                    dateFormat.parse(entry.date)?.time ?: 0L
-                } catch (e: Exception) { 0L }
-                activities.add(RecentActivity.Diary(entry, entry.date, timestamp))
-            }
-
-            // 몸무게 추가
-            weightRecords.forEach { record ->
-                val timestamp = try {
-                    dateFormat.parse(record.date)?.time ?: 0L
-                } catch (e: Exception) { 0L }
-                activities.add(RecentActivity.Weight(record, record.date, timestamp))
-            }
-
-            // 접종 추가
-            vaccinations.forEach { vaccine ->
-                val timestamp = try {
-                    dateFormat.parse(vaccine.date)?.time ?: 0L
-                } catch (e: Exception) { 0L }
-                activities.add(RecentActivity.Vaccine(vaccine, vaccine.date, timestamp))
-            }
-
-            // 사진 추가
-            photoMemories.forEach { photo ->
-                val timestamp = try {
-                    dateFormat.parse(photo.date)?.time ?: 0L
-                } catch (e: Exception) { 0L }
-                activities.add(RecentActivity.Photo(photo, photo.date, timestamp))
-            }
-
-            // 최신순 정렬 후 상위 5개
-            activities.sortedByDescending { it.timestamp }.take(5)
-        }
-    }
 
     var showWeightDialog by remember { mutableStateOf(false) }
     var showVaccineDialog by remember { mutableStateOf(false) }
@@ -261,44 +219,44 @@ fun HomeScreen(viewModel: PuppyViewModel) {
         // 최근 활동 목록
         items(recentActivities) { activity ->
             when (activity) {
-                is RecentActivity.Diary -> {
+                is DiaryEntry -> {
                     ActivityCard(
                         icon = Icons.Default.Edit,
                         iconColor = Color(0xFF9C27B0),
-                        title = activity.entry.title,
+                        title = activity.title,
                         subtitle = "일기",
                         date = activity.date,
                         onClick = {
-                            selectedDiaryId = activity.entry.id
+                            selectedDiaryId = activity.id
                             showDiaryDetailDialog = true
                         }
                     )
                 }
-                is RecentActivity.Weight -> {
+                is WeightRecord -> {
                     ActivityCard(
                         icon = Icons.Default.Star,
                         iconColor = Color(0xFF2196F3),
-                        title = "${activity.record.weight} kg",
+                        title = "${activity.weight} kg",
                         subtitle = "몸무게 기록",
                         date = activity.date,
                         onClick = { }
                     )
                 }
-                is RecentActivity.Vaccine -> {
+                is Vaccination -> {
                     ActivityCard(
                         icon = Icons.Default.Favorite,
                         iconColor = Color(0xFF4CAF50),
-                        title = activity.vaccination.vaccine,
-                        subtitle = "예방접종 (다음: ${activity.vaccination.nextDate})",
+                        title = activity.vaccine,
+                        subtitle = "예방접종 (다음: ${activity.nextDate})",
                         date = activity.date,
                         onClick = { }
                     )
                 }
-                is RecentActivity.Photo -> {
+                is PhotoMemory -> {
                     ActivityCard(
                         icon = Icons.Default.Face,
                         iconColor = Color(0xFFE91E63),
-                        title = if (activity.photo.description.isNotEmpty()) activity.photo.description else "사진",
+                        title = if (activity.description.isNotEmpty()) activity.description else "사진",
                         subtitle = "사진첩",
                         date = activity.date,
                         onClick = { }

@@ -10,5 +10,6 @@ data class DiaryEntryEntity(
     val date: String,
     val title: String,
     val content: String,
-    val photo: String? = null
+    val photo: String? = null,
+    val createdAt: Long = System.currentTimeMillis()
 )

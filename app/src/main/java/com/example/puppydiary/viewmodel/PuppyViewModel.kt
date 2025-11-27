@@ -1,6 +1,7 @@
 package com.example.puppydiary.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -64,7 +65,39 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
         .map { entities ->
             entities.map { PhotoMemory(it.id, it.photo, it.date, it.weight, it.description, it.diaryEntryId) }
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    // 최근 활동 통합
+    val recentActivities: StateFlow<List<Any>> = combine(
+        diaryEntryDao.getAllEntries(),
+        weightRecordDao.getAllRecords(),
+        vaccinationDao.getAllVaccinations(),
+        photoMemoryDao.getAllPhotoMemories()
+    ) { diaries, weights, vaccines, photos ->
+        Log.d("PuppyDiary", "Combining: diaries=${diaries.size}, weights=${weights.size}, vaccines=${vaccines.size}, photos=${photos.size}")
+
+        // Pair: (데이터, createdAt) - createdAt으로 정렬
+        val activities = mutableListOf<Pair<Any, Long>>()
+
+        diaries.forEach { entry ->
+            activities.add(Pair(DiaryEntry(entry.id, entry.date, entry.title, entry.content, entry.photo), entry.createdAt))
+        }
+
+        weights.forEach { record ->
+            activities.add(Pair(WeightRecord(record.date, record.weight), record.createdAt))
+        }
+
+        vaccines.forEach { vaccine ->
+            activities.add(Pair(Vaccination(vaccine.date, vaccine.vaccine, vaccine.nextDate, vaccine.completed), vaccine.createdAt))
+        }
+
+        photos.forEach { photo ->
+            activities.add(Pair(PhotoMemory(photo.id, photo.photo, photo.date, photo.weight, photo.description, photo.diaryEntryId), photo.createdAt))
+        }
+
+        // createdAt 내림차순 (최신이 위로)
+        activities.sortedByDescending { it.second }.take(5).map { it.first }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     var selectedDateRange = mutableStateOf(DateRange.MONTH)
         private set
@@ -165,6 +198,7 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
     fun addPhoto(photoPath: String, description: String = "") {
         viewModelScope.launch {
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            Log.d("PuppyDiary", "Adding photo: $photoPath, date: $today")
             photoMemoryDao.insert(
                 PhotoMemoryEntity(
                     photo = photoPath,
@@ -172,6 +206,7 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
                     description = description
                 )
             )
+            Log.d("PuppyDiary", "Photo inserted successfully")
         }
     }
 

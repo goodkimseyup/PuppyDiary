@@ -8,5 +8,6 @@ data class WeightRecordEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val date: String,
-    val weight: Float
+    val weight: Float,
+    val createdAt: Long = System.currentTimeMillis()
 )

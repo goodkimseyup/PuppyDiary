@@ -10,5 +10,6 @@ data class VaccinationEntity(
     val date: String,
     val vaccine: String,
     val nextDate: String,
-    val completed: Boolean
+    val completed: Boolean,
+    val createdAt: Long = System.currentTimeMillis()
 )
