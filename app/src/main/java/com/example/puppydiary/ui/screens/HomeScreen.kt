@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -56,6 +57,10 @@ fun HomeScreen(viewModel: PuppyViewModel) {
     val weightRecords by viewModel.weightRecords.collectAsState()
     val vaccinations by viewModel.vaccinations.collectAsState()
     val photoMemories by viewModel.photoMemories.collectAsState()
+
+    // Snackbar 상태
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     // 현재 몸무게 (weightRecords가 변경될 때마다 자동 업데이트)
     val currentWeight = weightRecords.lastOrNull()?.weight ?: 0f
@@ -153,12 +158,16 @@ fun HomeScreen(viewModel: PuppyViewModel) {
         }
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
         item {
             Column {
                 Text(
@@ -295,6 +304,7 @@ fun HomeScreen(viewModel: PuppyViewModel) {
                 }
             }
         }
+        }
     }
 
     // 프로필 수정 다이얼로그
@@ -383,6 +393,7 @@ fun HomeScreen(viewModel: PuppyViewModel) {
                         if (editName.isNotEmpty() && editBreed.isNotEmpty() && editBirthDate.isNotEmpty()) {
                             viewModel.updatePuppy(editName, editBreed, editBirthDate)
                             showProfileEditDialog = false
+                            scope.launch { snackbarHostState.showSnackbar("프로필이 수정되었습니다") }
                         }
                     },
                     enabled = editName.isNotEmpty() && editBreed.isNotEmpty() && editBirthDate.isNotEmpty()
@@ -469,6 +480,7 @@ fun HomeScreen(viewModel: PuppyViewModel) {
                         onClick = {
                             viewModel.deleteDiaryEntry(entry.id)
                             showDiaryDetailDialog = false
+                            scope.launch { snackbarHostState.showSnackbar("일기가 삭제되었습니다") }
                         },
                         colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
                     ) {
@@ -500,6 +512,7 @@ fun HomeScreen(viewModel: PuppyViewModel) {
                             viewModel.addWeightRecord(weightInput.toFloatOrNull() ?: 0f)
                             weightInput = ""
                             showWeightDialog = false
+                            scope.launch { snackbarHostState.showSnackbar("몸무게가 저장되었습니다") }
                         }
                     }
                 ) { Text("저장") }
@@ -557,6 +570,7 @@ fun HomeScreen(viewModel: PuppyViewModel) {
                             vaccineInput = ""
                             nextDateInput = ""
                             showVaccineDialog = false
+                            scope.launch { snackbarHostState.showSnackbar("예방접종이 저장되었습니다") }
                         }
                     },
                     enabled = vaccineInput.isNotEmpty() && nextDateInput.isNotEmpty()
@@ -637,6 +651,7 @@ fun HomeScreen(viewModel: PuppyViewModel) {
                             titleInput = ""
                             contentInput = ""
                             showDiaryDialog = false
+                            scope.launch { snackbarHostState.showSnackbar("일기가 저장되었습니다") }
                         }
                     }
                 ) { Text("저장") }

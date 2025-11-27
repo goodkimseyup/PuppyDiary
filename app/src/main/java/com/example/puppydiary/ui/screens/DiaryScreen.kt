@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -21,16 +22,23 @@ import com.example.puppydiary.viewmodel.PuppyViewModel
 fun DiaryScreen(viewModel: PuppyViewModel) {
     val diaryEntries by viewModel.diaryEntries.collectAsState()
 
+    // Snackbar 상태
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
     var showDialog by remember { mutableStateOf(false) }
     var showDetailDialog by remember { mutableStateOf(false) }
     var selectedEntryId by remember { mutableStateOf<Long?>(null) }
     var titleInput by remember { mutableStateOf("") }
     var contentInput by remember { mutableStateOf("") }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(paddingValues)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -189,6 +197,7 @@ fun DiaryScreen(viewModel: PuppyViewModel) {
                         onClick = {
                             viewModel.deleteDiaryEntry(entry.id)
                             showDetailDialog = false
+                            scope.launch { snackbarHostState.showSnackbar("일기가 삭제되었습니다") }
                         },
                         colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
                     ) {
@@ -237,6 +246,7 @@ fun DiaryScreen(viewModel: PuppyViewModel) {
                             titleInput = ""
                             contentInput = ""
                             showDialog = false
+                            scope.launch { snackbarHostState.showSnackbar("일기가 저장되었습니다") }
                         }
                     },
                     enabled = titleInput.isNotEmpty() && contentInput.isNotEmpty()

@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,6 +39,10 @@ import java.io.File
 fun PhotoGalleryScreen(viewModel: PuppyViewModel) {
     val context = LocalContext.current
     val photoMemories by viewModel.photoMemories.collectAsState()
+    
+    // Snackbar 상태
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     
     var showAddPhotoDialog by remember { mutableStateOf(false) }
     var showPhotoDetailDialog by remember { mutableStateOf(false) }
@@ -68,6 +73,7 @@ fun PhotoGalleryScreen(viewModel: PuppyViewModel) {
     }
     
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { imagePickerLauncher.launch("image/*") },
@@ -213,6 +219,7 @@ fun PhotoGalleryScreen(viewModel: PuppyViewModel) {
                         showAddPhotoDialog = false
                         selectedImagePath = null
                         descriptionInput = ""
+                        scope.launch { snackbarHostState.showSnackbar("사진이 저장되었습니다") }
                     }
                 ) {
                     Text("저장")
@@ -319,6 +326,7 @@ fun PhotoGalleryScreen(viewModel: PuppyViewModel) {
                                 selectedPhoto?.let { viewModel.deletePhoto(it) }
                                 showPhotoDetailDialog = false
                                 selectedPhoto = null
+                                scope.launch { snackbarHostState.showSnackbar("사진이 삭제되었습니다") }
                             },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.outlinedButtonColors(
