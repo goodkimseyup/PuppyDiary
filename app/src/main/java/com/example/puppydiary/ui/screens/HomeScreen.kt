@@ -28,6 +28,7 @@ import com.example.puppydiary.data.model.Vaccination
 import com.example.puppydiary.data.model.WeightRecord
 import com.example.puppydiary.ui.components.PuppyProfileCard
 import com.example.puppydiary.viewmodel.PuppyViewModel
+import androidx.navigation.NavController
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -43,7 +44,7 @@ val breedList = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(viewModel: PuppyViewModel) {
+fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
     val context = LocalContext.current
     val puppyData by viewModel.puppyData.collectAsState()
     val diaryEntries by viewModel.diaryEntries.collectAsState()
@@ -226,10 +227,7 @@ fun HomeScreen(viewModel: PuppyViewModel) {
                         title = activity.title,
                         subtitle = "일기",
                         date = activity.date,
-                        onClick = {
-                            selectedDiaryId = activity.id
-                            showDiaryDetailDialog = true
-                        }
+                        onClick = { navController.navigate("diary") }
                     )
                 }
                 is WeightRecord -> {
@@ -239,7 +237,7 @@ fun HomeScreen(viewModel: PuppyViewModel) {
                         title = "${activity.weight} kg",
                         subtitle = "몸무게 기록",
                         date = activity.date,
-                        onClick = { }
+                        onClick = { navController.navigate("stats") }
                     )
                 }
                 is Vaccination -> {
@@ -249,7 +247,7 @@ fun HomeScreen(viewModel: PuppyViewModel) {
                         title = activity.vaccine,
                         subtitle = "예방접종 (다음: ${activity.nextDate})",
                         date = activity.date,
-                        onClick = { }
+                        onClick = { navController.navigate("stats") }
                     )
                 }
                 is PhotoMemory -> {
@@ -259,7 +257,7 @@ fun HomeScreen(viewModel: PuppyViewModel) {
                         title = if (activity.description.isNotEmpty()) activity.description else "사진",
                         subtitle = "사진첩",
                         date = activity.date,
-                        onClick = { }
+                        onClick = { navController.navigate("gallery") }
                     )
                 }
             }

@@ -57,7 +57,7 @@ fun PuppyNavigation(
                 )
             }
             composable("home") {
-                HomeScreen(viewModel = viewModel)
+                HomeScreen(viewModel = viewModel, navController = navController)
             }
             composable("stats") {
                 StatsScreen(viewModel = viewModel)
