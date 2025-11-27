@@ -13,7 +13,8 @@ fun BottomNavigation(navController: NavController) {
     val items = listOf(
         NavigationItem("home", "홈", Icons.Default.Home),
         NavigationItem("stats", "통계", Icons.Default.Info),
-        NavigationItem("diary", "일기", Icons.Default.Create)
+        NavigationItem("diary", "일기", Icons.Default.Create),
+        NavigationItem("gallery", "사진첩", Icons.Default.Favorite)
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()

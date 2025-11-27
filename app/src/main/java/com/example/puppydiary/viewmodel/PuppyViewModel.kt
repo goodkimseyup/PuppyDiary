@@ -22,6 +22,7 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
     private val vaccinationDao = database.vaccinationDao()
     private val diaryEntryDao = database.diaryEntryDao()
     private val achievementDao = database.achievementDao()
+    private val photoMemoryDao = database.photoMemoryDao()
 
     // 강아지 데이터 (Flow)
     val puppyData: StateFlow<PuppyData?> = puppyDao.getPuppy()
@@ -55,6 +56,13 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
     val diaryEntries: StateFlow<List<DiaryEntry>> = diaryEntryDao.getAllEntries()
         .map { entities ->
             entities.map { DiaryEntry(it.id, it.date, it.title, it.content, it.photo) }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // 사진첩
+    val photoMemories: StateFlow<List<PhotoMemory>> = photoMemoryDao.getAllPhotoMemories()
+        .map { entities ->
+            entities.map { PhotoMemory(it.id, it.photo, it.date, it.weight, it.description, it.diaryEntryId) }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -150,6 +158,36 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteDiaryEntry(id: Long) {
         viewModelScope.launch {
             diaryEntryDao.deleteById(id)
+        }
+    }
+
+    // 사진 추가
+    fun addPhoto(photoPath: String, description: String = "") {
+        viewModelScope.launch {
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            photoMemoryDao.insert(
+                PhotoMemoryEntity(
+                    photo = photoPath,
+                    date = today,
+                    description = description
+                )
+            )
+        }
+    }
+
+    // 사진 삭제
+    fun deletePhoto(photoMemory: PhotoMemory) {
+        viewModelScope.launch {
+            photoMemoryDao.delete(
+                PhotoMemoryEntity(
+                    id = photoMemory.id,
+                    photo = photoMemory.photo,
+                    date = photoMemory.date,
+                    weight = photoMemory.weight,
+                    description = photoMemory.description,
+                    diaryEntryId = photoMemory.diaryEntryId
+                )
+            )
         }
     }
 

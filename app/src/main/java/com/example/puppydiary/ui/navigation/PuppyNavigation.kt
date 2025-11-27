@@ -65,6 +65,9 @@ fun PuppyNavigation(
             composable("diary") {
                 DiaryScreen(viewModel = viewModel)
             }
+            composable("gallery") {
+                PhotoGalleryScreen(viewModel = viewModel)
+            }
         }
     }
 }
