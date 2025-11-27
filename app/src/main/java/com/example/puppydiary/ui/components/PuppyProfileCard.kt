@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.puppydiary.data.model.PuppyData
+import com.example.puppydiary.utils.getBreedEmoji
 import java.io.File
 
 @Composable
@@ -121,13 +122,13 @@ fun PuppyProfileCard(
                         )
                     } else {
                         Text(
-                            text = "🐕",
+                            text = getBreedEmoji(puppyData.breed),
                             fontSize = 40.sp
                         )
                     }
                 } else {
                     Text(
-                        text = "🐕",
+                        text = getBreedEmoji(puppyData.breed),
                         fontSize = 40.sp
                     )
                 }

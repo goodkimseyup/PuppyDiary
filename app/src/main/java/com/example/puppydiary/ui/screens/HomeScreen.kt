@@ -29,19 +29,15 @@ import com.example.puppydiary.data.model.Vaccination
 import com.example.puppydiary.data.model.WeightRecord
 import com.example.puppydiary.ui.components.PuppyProfileCard
 import com.example.puppydiary.viewmodel.PuppyViewModel
+import com.example.puppydiary.utils.allBreedList
+import com.example.puppydiary.utils.getBreedEmoji
 import androidx.navigation.NavController
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-// 견종 목록
-val breedList = listOf(
-    "말티즈", "푸들", "포메라니안", "치와와", "시츄",
-    "요크셔테리어", "비숑프리제", "골든리트리버", "래브라도리트리버", "진돗개",
-    "웰시코기", "비글", "닥스훈트", "슈나우저", "보더콜리",
-    "사모예드", "시바이누", "프렌치불독", "불독", "허스키",
-    "믹스견", "기타"
-)
+// 견종/묘종 목록은 PetUtils에서 가져옴
+val breedList = allBreedList
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -152,7 +148,7 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "🐾 펫 다이어리",
+                            text = "🐾 나의반쪽",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -397,7 +393,7 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
             onDismissRequest = { showPuppySelector = false },
             title = { 
                 Text(
-                    text = "🐕 반려견 선택",
+                    text = "🐾 반려동물 선택",
                     fontWeight = FontWeight.Bold
                 )
             },
@@ -439,7 +435,7 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
                                         ),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(text = "🐕", fontSize = 20.sp)
+                                    Text(text = getBreedEmoji(puppy.breed), fontSize = 20.sp)
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column(modifier = Modifier.weight(1f)) {
@@ -490,7 +486,7 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "새 반려견 등록",
+                                text = "새 반려동물 등록",
                                 color = Color(0xFF4CAF50),
                                 fontWeight = FontWeight.Medium
                             )

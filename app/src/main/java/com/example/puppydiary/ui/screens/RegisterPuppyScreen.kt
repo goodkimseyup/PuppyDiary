@@ -30,6 +30,9 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.puppydiary.viewmodel.PuppyViewModel
+import com.example.puppydiary.utils.dogBreedList
+import com.example.puppydiary.utils.catBreedList
+import com.example.puppydiary.utils.getBreedEmoji
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -41,24 +44,20 @@ fun RegisterPuppyScreen(
     onRegistrationComplete: () -> Unit
 ) {
     val context = LocalContext.current
-    
+
     var name by remember { mutableStateOf("") }
+    var petType by remember { mutableStateOf("강아지") } // 강아지 또는 고양이
     var breed by remember { mutableStateOf("") }
     var birthYear by remember { mutableStateOf("") }
     var birthMonth by remember { mutableStateOf("") }
     var birthDay by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var savedImagePath by remember { mutableStateOf<String?>(null) }
-    
-    var showDatePicker by remember { mutableStateOf(false) }
+
     var showBreedDropdown by remember { mutableStateOf(false) }
 
-    val breeds = listOf(
-        "말티즈", "푸들", "포메라니안", "치와와", "시츄",
-        "비숑 프리제", "요크셔테리어", "닥스훈트", "비글", "골든리트리버",
-        "래브라도 리트리버", "시바견", "웰시코기", "불독", "진돗개",
-        "사모예드", "허스키", "보더콜리", "슈나우저", "믹스견", "기타"
-    )
+    // 선택된 타입에 따른 종류 목록
+    val breeds = if (petType == "강아지") dogBreedList else catBreedList
 
     // 이미지 선택 런처
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -91,7 +90,7 @@ fun RegisterPuppyScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "🐕 우리 아이 등록하기",
+            text = "🐾 우리 아이 등록하기",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 32.dp)
@@ -116,6 +115,12 @@ fun RegisterPuppyScreen(
                     contentDescription = "프로필 이미지",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
+                )
+            } else if (breed.isNotEmpty()) {
+                // 견종/묘종 선택 시 해당 이모지 표시
+                Text(
+                    text = getBreedEmoji(breed),
+                    fontSize = 60.sp
                 )
             } else {
                 Column(
@@ -143,7 +148,7 @@ fun RegisterPuppyScreen(
             value = name,
             onValueChange = { name = it },
             label = { Text("이름") },
-            placeholder = { Text("강아지 이름을 입력하세요") },
+            placeholder = { Text("반려동물 이름을 입력하세요") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             shape = RoundedCornerShape(12.dp)
@@ -151,7 +156,50 @@ fun RegisterPuppyScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 견종 선택
+        // 강아지/고양이 선택
+        Text(
+            text = "반려동물 종류",
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            fontWeight = FontWeight.Medium
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // 강아지 버튼
+            FilterChip(
+                selected = petType == "강아지",
+                onClick = {
+                    petType = "강아지"
+                    breed = "" // 종류 초기화
+                },
+                label = { Text("🐕 강아지") },
+                modifier = Modifier.weight(1f),
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = Color(0xFFE91E63).copy(alpha = 0.2f)
+                )
+            )
+            // 고양이 버튼
+            FilterChip(
+                selected = petType == "고양이",
+                onClick = {
+                    petType = "고양이"
+                    breed = "" // 종류 초기화
+                },
+                label = { Text("🐱 고양이") },
+                modifier = Modifier.weight(1f),
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = Color(0xFF9C27B0).copy(alpha = 0.2f)
+                )
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 견종/묘종 선택
         ExposedDropdownMenuBox(
             expanded = showBreedDropdown,
             onExpandedChange = { showBreedDropdown = it },
@@ -160,12 +208,15 @@ fun RegisterPuppyScreen(
             OutlinedTextField(
                 value = breed,
                 onValueChange = { breed = it },
-                label = { Text("견종") },
-                placeholder = { Text("견종을 선택하세요") },
+                label = { Text(if (petType == "강아지") "견종" else "묘종") },
+                placeholder = { Text("${if (petType == "강아지") "견종" else "묘종"}을 선택하세요") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .menuAnchor(),
                 readOnly = true,
+                leadingIcon = if (breed.isNotEmpty()) {
+                    { Text(getBreedEmoji(breed), fontSize = 20.sp) }
+                } else null,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showBreedDropdown) },
                 shape = RoundedCornerShape(12.dp)
             )
@@ -175,7 +226,13 @@ fun RegisterPuppyScreen(
             ) {
                 breeds.forEach { breedOption ->
                     DropdownMenuItem(
-                        text = { Text(breedOption) },
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(getBreedEmoji(breedOption), fontSize = 20.sp)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(breedOption)
+                            }
+                        },
                         onClick = {
                             breed = breedOption
                             showBreedDropdown = false
