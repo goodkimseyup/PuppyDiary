@@ -6,12 +6,17 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.puppydiary.data.local.SettingsDataStore
 import com.example.puppydiary.ui.navigation.PuppyNavigation
 import com.example.puppydiary.ui.theme.PuppyDiaryTheme
 import com.example.puppydiary.utils.NotificationHelper
 import com.example.puppydiary.viewmodel.PuppyViewModel
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -20,13 +25,24 @@ class MainActivity : ComponentActivity() {
         // 알림 채널 생성
         NotificationHelper.createNotificationChannel(this)
 
+        val settingsDataStore = SettingsDataStore(this)
+
         setContent {
-            PuppyDiaryTheme {
+            val isDarkMode by settingsDataStore.isDarkMode.collectAsState(initial = false)
+            val scope = rememberCoroutineScope()
+
+            PuppyDiaryTheme(darkTheme = isDarkMode) {
                 val viewModel: PuppyViewModel = viewModel()
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     PuppyNavigation(
                         viewModel = viewModel,
+                        isDarkMode = isDarkMode,
+                        onDarkModeChange = { enabled ->
+                            scope.launch {
+                                settingsDataStore.setDarkMode(enabled)
+                            }
+                        },
                         modifier = Modifier.padding(innerPadding)
                     )
                 }

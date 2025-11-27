@@ -15,6 +15,8 @@ import com.example.puppydiary.viewmodel.PuppyViewModel
 @Composable
 fun PuppyNavigation(
     viewModel: PuppyViewModel,
+    isDarkMode: Boolean,
+    onDarkModeChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
@@ -67,6 +69,12 @@ fun PuppyNavigation(
             }
             composable("gallery") {
                 PhotoGalleryScreen(viewModel = viewModel)
+            }
+            composable("settings") {
+                SettingsScreen(
+                    isDarkMode = isDarkMode,
+                    onDarkModeChange = onDarkModeChange
+                )
             }
         }
     }

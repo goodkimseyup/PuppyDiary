@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -16,6 +17,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.puppydiary.viewmodel.PuppyViewModel
+import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
+import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
+import com.patrykandpatrick.vico.compose.chart.Chart
+import com.patrykandpatrick.vico.compose.chart.line.lineChart
+import com.patrykandpatrick.vico.compose.chart.line.lineSpec
+import com.patrykandpatrick.vico.compose.component.shapeComponent
+import com.patrykandpatrick.vico.compose.component.textComponent
+import com.patrykandpatrick.vico.compose.dimensions.dimensionsOf
+import com.patrykandpatrick.vico.core.axis.AxisPosition
+import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
+import com.patrykandpatrick.vico.core.component.shape.Shapes
+import com.patrykandpatrick.vico.core.entry.entryModelOf
 
 @Composable
 fun StatsScreen(viewModel: PuppyViewModel) {
@@ -77,6 +90,7 @@ fun StatsScreen(viewModel: PuppyViewModel) {
             }
         }
 
+        // 몸무게 라인 차트
         item {
             Card(
                 modifier = Modifier.fillMaxWidth()
@@ -97,49 +111,58 @@ fun StatsScreen(viewModel: PuppyViewModel) {
                             color = Color.Gray,
                             modifier = Modifier.padding(vertical = 24.dp)
                         )
+                    } else if (weightRecords.size == 1) {
+                        // 데이터가 1개일 때는 간단히 표시
+                        Text(
+                            text = "첫 번째 기록: ${weightRecords.first().weight}kg",
+                            color = Color(0xFF2196F3),
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(vertical = 24.dp)
+                        )
                     } else {
-                        Row(
+                        // Vico 라인 차트
+                        val displayRecords = weightRecords.takeLast(10)
+                        val chartEntryModel = remember(displayRecords) {
+                            entryModelOf(*displayRecords.mapIndexed { index, record ->
+                                index.toFloat() to record.weight
+                            }.toTypedArray())
+                        }
+
+                        val dateLabels = remember(displayRecords) {
+                            displayRecords.map { it.date.substring(5) }
+                        }
+
+                        val bottomAxisValueFormatter = AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
+                            dateLabels.getOrElse(value.toInt()) { "" }
+                        }
+
+                        Chart(
+                            chart = lineChart(
+                                lines = listOf(
+                                    lineSpec(
+                                        lineColor = Color(0xFF2196F3),
+                                        lineBackgroundShader = null
+                                    )
+                                )
+                            ),
+                            model = chartEntryModel,
+                            startAxis = rememberStartAxis(
+                                title = "kg",
+                                titleComponent = textComponent(
+                                    color = Color.Gray,
+                                    padding = dimensionsOf(end = 8.dp)
+                                )
+                            ),
+                            bottomAxis = rememberBottomAxis(
+                                valueFormatter = bottomAxisValueFormatter,
+                                titleComponent = textComponent(
+                                    color = Color.Gray
+                                )
+                            ),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(200.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.Bottom
-                        ) {
-                            val maxWeight = weightRecords.maxOfOrNull { it.weight } ?: 1f
-                            val displayRecords = weightRecords.takeLast(7)
-
-                            displayRecords.forEach { record ->
-                                Column(
-                                    modifier = Modifier.weight(1f),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    val height = (record.weight / maxWeight * 150).dp
-
-                                    Box(
-                                        modifier = Modifier
-                                            .width(24.dp)
-                                            .height(height)
-                                            .background(
-                                                Color(0xFF2196F3),
-                                                RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
-                                            )
-                                    )
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    Text(
-                                        text = "${record.weight}",
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    Text(
-                                        text = record.date.substring(5),
-                                        fontSize = 8.sp,
-                                        color = Color.Gray
-                                    )
-                                }
-                            }
-                        }
+                                .height(200.dp)
+                        )
                     }
                 }
             }

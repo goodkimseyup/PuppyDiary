@@ -143,6 +143,7 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
                         puppyData = data,
                         age = viewModel.calculateAge(),
                         currentWeight = currentWeight,
+                        birthdayDday = viewModel.getBirthdayDday(),
                         onImageClick = { imagePickerLauncher.launch("image/*") },
                         onEditClick = {
                             // 현재 값으로 초기화

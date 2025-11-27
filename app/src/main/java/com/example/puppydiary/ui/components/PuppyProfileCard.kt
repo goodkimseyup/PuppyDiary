@@ -30,6 +30,7 @@ fun PuppyProfileCard(
     puppyData: PuppyData,
     age: String,
     currentWeight: Float,
+    birthdayDday: String? = null,
     modifier: Modifier = Modifier,
     onImageClick: (() -> Unit)? = null,
     onEditClick: (() -> Unit)? = null
@@ -66,9 +67,29 @@ fun PuppyProfileCard(
             }
         }
         
+        // 생일 D-day 배지 (왼쪽 상단)
+        if (birthdayDday != null) {
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(12.dp),
+                color = Color.White.copy(alpha = 0.9f),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = "🎂 $birthdayDday",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFE91E63),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                )
+            }
+        }
+        
         Row(
             modifier = Modifier
                 .padding(24.dp)
+                .padding(top = if (birthdayDday != null) 16.dp else 0.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {

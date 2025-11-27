@@ -14,7 +14,8 @@ fun BottomNavigation(navController: NavController) {
         NavigationItem("home", "홈", Icons.Default.Home),
         NavigationItem("stats", "통계", Icons.Default.Info),
         NavigationItem("diary", "일기", Icons.Default.Create),
-        NavigationItem("gallery", "사진첩", Icons.Default.Favorite)
+        NavigationItem("gallery", "사진첩", Icons.Default.Favorite),
+        NavigationItem("settings", "설정", Icons.Default.Settings)
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()

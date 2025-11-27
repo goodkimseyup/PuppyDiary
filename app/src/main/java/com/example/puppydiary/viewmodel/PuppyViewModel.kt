@@ -256,6 +256,37 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // 생일 D-day 계산
+    fun getBirthdayDday(): String? {
+        val puppy = puppyData.value ?: return null
+        return try {
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val birthDate = sdf.parse(puppy.birthDate) ?: return null
+            
+            val today = Calendar.getInstance()
+            val birthday = Calendar.getInstance().apply {
+                time = birthDate
+                set(Calendar.YEAR, today.get(Calendar.YEAR))
+            }
+            
+            // 올해 생일이 지났으면 내년으로
+            if (birthday.before(today)) {
+                birthday.add(Calendar.YEAR, 1)
+            }
+            
+            val diffInMillis = birthday.timeInMillis - today.timeInMillis
+            val daysUntilBirthday = (diffInMillis / (1000 * 60 * 60 * 24)).toInt()
+            
+            when {
+                daysUntilBirthday == 0 -> "오늘 생일! 🎉"
+                daysUntilBirthday <= 30 -> "D-$daysUntilBirthday"
+                else -> null // 30일 이상 남으면 표시 안함
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     fun getCurrentWeight(): Float = weightRecords.value.lastOrNull()?.weight ?: 0f
 
     fun getWeeklyGrowth(): Float {
