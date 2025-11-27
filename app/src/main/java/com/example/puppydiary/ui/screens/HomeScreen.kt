@@ -65,6 +65,10 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    // 검색 상태
+    var showSearchBar by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+
     // 현재 몸무게 (weightRecords가 변경될 때마다 자동 업데이트)
     val currentWeight = weightRecords.lastOrNull()?.weight ?: 0f
 
@@ -131,12 +135,54 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
         ) {
         item {
             Column {
-                Text(
-                    text = "🐾 펫 다이어리",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
+                // 타이틀 + 검색
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "🐾 펫 다이어리",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(onClick = { showSearchBar = !showSearchBar }) {
+                        Icon(
+                            imageVector = if (showSearchBar) Icons.Default.Close else Icons.Default.Search,
+                            contentDescription = "검색",
+                            tint = Color(0xFFE91E63)
+                        )
+                    }
+                }
+
+                // 검색바
+                if (showSearchBar) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("일기, 사진, 접종 검색...") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Search, contentDescription = null)
+                        },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "지우기")
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFFE91E63),
+                            cursorColor = Color(0xFFE91E63)
+                        )
+                    )
+                }
 
                 puppyData?.let { data ->
                     PuppyProfileCard(
@@ -194,20 +240,20 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
                         modifier = Modifier.padding(bottom = 12.dp)
                     ) {
                         Icon(
-                            Icons.Default.Favorite,
+                            if (searchQuery.isNotEmpty()) Icons.Default.Search else Icons.Default.Favorite,
                             contentDescription = null,
-                            tint = Color.Red,
+                            tint = if (searchQuery.isNotEmpty()) Color(0xFFE91E63) else Color.Red,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "최근 활동",
+                            text = if (searchQuery.isNotEmpty()) "검색 결과" else "최근 활동",
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
                         )
                     }
-                    
-                    if (recentActivities.isEmpty()) {
+
+                    if (recentActivities.isEmpty() && searchQuery.isEmpty()) {
                         Text(
                             text = "아직 기록이 없습니다",
                             color = Color.Gray,
@@ -218,8 +264,51 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
             }
         }
 
-        // 최근 활동 목록
-        items(recentActivities) { activity ->
+        // 검색 결과 필터링
+        val filteredActivities = if (searchQuery.isNotEmpty()) {
+            val query = searchQuery.lowercase()
+            val results = mutableListOf<Any>()
+
+            // 일기 검색
+            diaryEntries.filter {
+                it.title.lowercase().contains(query) ||
+                it.content.lowercase().contains(query)
+            }.forEach { results.add(it) }
+
+            // 접종 검색
+            vaccinations.filter {
+                it.vaccine.lowercase().contains(query)
+            }.forEach { results.add(it) }
+
+            // 사진 설명 검색
+            photoMemories.filter {
+                it.description.lowercase().contains(query)
+            }.forEach { results.add(it) }
+
+            // 몸무게는 날짜로 검색
+            weightRecords.filter {
+                it.date.contains(query)
+            }.forEach { results.add(it) }
+
+            results
+        } else {
+            recentActivities
+        }
+
+        // 검색 결과 없음 표시
+        if (searchQuery.isNotEmpty() && filteredActivities.isEmpty()) {
+            item {
+                Text(
+                    text = "\"$searchQuery\"에 대한 검색 결과가 없습니다",
+                    color = Color.Gray,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            }
+        }
+
+        // 활동 목록
+        items(filteredActivities) { activity ->
             when (activity) {
                 is DiaryEntry -> {
                     ActivityCard(
