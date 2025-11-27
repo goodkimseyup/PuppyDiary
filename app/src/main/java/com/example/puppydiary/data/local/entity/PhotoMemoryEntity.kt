@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 data class PhotoMemoryEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+    val puppyId: Long = 0,
     val photo: String,
     val date: String,
     val weight: Float? = null,

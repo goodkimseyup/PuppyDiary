@@ -6,14 +6,17 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface WeightRecordDao {
+    @Query("SELECT * FROM weight_records WHERE puppyId = :puppyId ORDER BY date ASC")
+    fun getRecordsByPuppy(puppyId: Long): Flow<List<WeightRecordEntity>>
+
     @Query("SELECT * FROM weight_records ORDER BY date ASC")
     fun getAllRecords(): Flow<List<WeightRecordEntity>>
 
-    @Query("SELECT * FROM weight_records WHERE date >= :startDate ORDER BY date ASC")
-    fun getWeightRecordsAfter(startDate: String): Flow<List<WeightRecordEntity>>
+    @Query("SELECT * FROM weight_records WHERE puppyId = :puppyId AND date >= :startDate ORDER BY date ASC")
+    fun getWeightRecordsAfter(puppyId: Long, startDate: String): Flow<List<WeightRecordEntity>>
 
-    @Query("SELECT * FROM weight_records ORDER BY date DESC LIMIT 1")
-    suspend fun getLatestWeightRecord(): WeightRecordEntity?
+    @Query("SELECT * FROM weight_records WHERE puppyId = :puppyId ORDER BY date DESC LIMIT 1")
+    suspend fun getLatestWeightRecord(puppyId: Long): WeightRecordEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(weightRecord: WeightRecordEntity)
@@ -21,6 +24,6 @@ interface WeightRecordDao {
     @Delete
     suspend fun delete(weightRecord: WeightRecordEntity)
 
-    @Query("DELETE FROM weight_records")
-    suspend fun deleteAll()
+    @Query("DELETE FROM weight_records WHERE puppyId = :puppyId")
+    suspend fun deleteByPuppy(puppyId: Long)
 }

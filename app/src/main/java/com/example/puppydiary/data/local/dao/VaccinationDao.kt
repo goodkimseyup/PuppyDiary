@@ -6,17 +6,17 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface VaccinationDao {
+    @Query("SELECT * FROM vaccinations WHERE puppyId = :puppyId ORDER BY date DESC")
+    fun getVaccinationsByPuppy(puppyId: Long): Flow<List<VaccinationEntity>>
+
     @Query("SELECT * FROM vaccinations ORDER BY date DESC")
     fun getAllVaccinations(): Flow<List<VaccinationEntity>>
 
-    @Query("SELECT * FROM vaccinations ORDER BY date DESC")
-    suspend fun getAllVaccinationsOnce(): List<VaccinationEntity>
+    @Query("SELECT * FROM vaccinations WHERE puppyId = :puppyId ORDER BY date DESC")
+    suspend fun getVaccinationsByPuppyOnce(puppyId: Long): List<VaccinationEntity>
 
-    @Query("SELECT * FROM vaccinations WHERE date >= :startDate ORDER BY date DESC")
-    fun getVaccinationsAfter(startDate: String): Flow<List<VaccinationEntity>>
-
-    @Query("SELECT * FROM vaccinations WHERE completed = 0 ORDER BY nextDate ASC")
-    fun getPendingVaccinations(): Flow<List<VaccinationEntity>>
+    @Query("SELECT * FROM vaccinations WHERE puppyId = :puppyId AND completed = 0 ORDER BY nextDate ASC")
+    fun getPendingVaccinations(puppyId: Long): Flow<List<VaccinationEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(vaccination: VaccinationEntity): Long
@@ -27,6 +27,6 @@ interface VaccinationDao {
     @Delete
     suspend fun delete(vaccination: VaccinationEntity)
 
-    @Query("DELETE FROM vaccinations")
-    suspend fun deleteAll()
+    @Query("DELETE FROM vaccinations WHERE puppyId = :puppyId")
+    suspend fun deleteByPuppy(puppyId: Long)
 }

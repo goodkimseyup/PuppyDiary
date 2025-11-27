@@ -6,6 +6,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PhotoMemoryDao {
+    @Query("SELECT * FROM photo_memories WHERE puppyId = :puppyId ORDER BY date DESC")
+    fun getPhotosByPuppy(puppyId: Long): Flow<List<PhotoMemoryEntity>>
+
     @Query("SELECT * FROM photo_memories ORDER BY date DESC")
     fun getAllPhotoMemories(): Flow<List<PhotoMemoryEntity>>
 
@@ -15,6 +18,6 @@ interface PhotoMemoryDao {
     @Delete
     suspend fun delete(photoMemory: PhotoMemoryEntity)
 
-    @Query("DELETE FROM photo_memories")
-    suspend fun deleteAll()
+    @Query("DELETE FROM photo_memories WHERE puppyId = :puppyId")
+    suspend fun deleteByPuppy(puppyId: Long)
 }

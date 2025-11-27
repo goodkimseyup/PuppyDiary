@@ -6,11 +6,11 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface DiaryEntryDao {
+    @Query("SELECT * FROM diary_entries WHERE puppyId = :puppyId ORDER BY date DESC")
+    fun getEntriesByPuppy(puppyId: Long): Flow<List<DiaryEntryEntity>>
+
     @Query("SELECT * FROM diary_entries ORDER BY date DESC")
     fun getAllEntries(): Flow<List<DiaryEntryEntity>>
-
-    @Query("SELECT * FROM diary_entries WHERE date >= :startDate ORDER BY date DESC")
-    fun getDiaryEntriesAfter(startDate: String): Flow<List<DiaryEntryEntity>>
 
     @Query("SELECT * FROM diary_entries WHERE id = :id")
     suspend fun getDiaryEntryById(id: Long): DiaryEntryEntity?
@@ -27,6 +27,6 @@ interface DiaryEntryDao {
     @Query("DELETE FROM diary_entries WHERE id = :id")
     suspend fun deleteById(id: Long)
 
-    @Query("DELETE FROM diary_entries")
-    suspend fun deleteAll()
+    @Query("DELETE FROM diary_entries WHERE puppyId = :puppyId")
+    suspend fun deleteByPuppy(puppyId: Long)
 }

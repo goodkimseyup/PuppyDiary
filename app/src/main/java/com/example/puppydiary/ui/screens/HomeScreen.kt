@@ -4,6 +4,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -47,6 +48,7 @@ val breedList = listOf(
 fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
     val context = LocalContext.current
     val puppyData by viewModel.puppyData.collectAsState()
+    val allPuppies by viewModel.allPuppies.collectAsState()
     val diaryEntries by viewModel.diaryEntries.collectAsState()
     val weightRecords by viewModel.weightRecords.collectAsState()
     val vaccinations by viewModel.vaccinations.collectAsState()
@@ -68,6 +70,9 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
     // 검색 상태
     var showSearchBar by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    
+    // 강아지 선택 다이얼로그
+    var showPuppySelector by remember { mutableStateOf(false) }
 
     // 현재 몸무게 (weightRecords가 변경될 때마다 자동 업데이트)
     val currentWeight = weightRecords.lastOrNull()?.weight ?: 0f
@@ -135,7 +140,7 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
         ) {
         item {
             Column {
-                // 타이틀 + 검색
+                // 타이틀 + 강아지 선택 + 검색
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -143,17 +148,48 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "🐾 펫 다이어리",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    IconButton(onClick = { showSearchBar = !showSearchBar }) {
-                        Icon(
-                            imageVector = if (showSearchBar) Icons.Default.Close else Icons.Default.Search,
-                            contentDescription = "검색",
-                            tint = Color(0xFFE91E63)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "🐾 펫 다이어리",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold
                         )
+                        // 다견 표시 (2마리 이상일 때)
+                        if (allPuppies.size > 1) {
+                            Surface(
+                                modifier = Modifier.padding(start = 8.dp),
+                                color = Color(0xFFE91E63).copy(alpha = 0.1f),
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    text = "${allPuppies.size}마리",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFFE91E63),
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
+                    Row {
+                        // 강아지 전환 버튼
+                        IconButton(onClick = { showPuppySelector = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Face,
+                                contentDescription = "강아지 선택",
+                                tint = Color(0xFF9C27B0)
+                            )
+                        }
+                        // 검색 버튼
+                        IconButton(onClick = { showSearchBar = !showSearchBar }) {
+                            Icon(
+                                imageVector = if (showSearchBar) Icons.Default.Close else Icons.Default.Search,
+                                contentDescription = "검색",
+                                tint = Color(0xFFE91E63)
+                            )
+                        }
                     }
                 }
 
@@ -353,6 +389,121 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
             }
         }
         }
+    }
+
+    // 강아지 선택/추가 다이얼로그
+    if (showPuppySelector) {
+        AlertDialog(
+            onDismissRequest = { showPuppySelector = false },
+            title = { 
+                Text(
+                    text = "🐕 반려견 선택",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // 강아지 목록
+                    allPuppies.forEach { puppy ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.selectPuppy(puppy.id)
+                                    showPuppySelector = false
+                                    scope.launch { snackbarHostState.showSnackbar("${puppy.name}(으)로 전환했습니다") }
+                                },
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (puppy.isSelected) 
+                                    Color(0xFFE91E63).copy(alpha = 0.1f) 
+                                else 
+                                    MaterialTheme.colorScheme.surface
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // 프로필 이미지 또는 이모지
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(
+                                            Color(0xFFE91E63).copy(alpha = 0.1f),
+                                            shape = androidx.compose.foundation.shape.CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(text = "🐕", fontSize = 20.sp)
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = puppy.name,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 16.sp
+                                    )
+                                    Text(
+                                        text = puppy.breed,
+                                        fontSize = 12.sp,
+                                        color = Color.Gray
+                                    )
+                                }
+                                if (puppy.isSelected) {
+                                    Icon(
+                                        Icons.Default.Check,
+                                        contentDescription = "선택됨",
+                                        tint = Color(0xFFE91E63),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 새 강아지 추가 버튼
+                    OutlinedCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showPuppySelector = false
+                                navController.navigate("register")
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "추가",
+                                tint = Color(0xFF4CAF50),
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "새 반려견 등록",
+                                color = Color(0xFF4CAF50),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showPuppySelector = false }) {
+                    Text("닫기")
+                }
+            }
+        )
     }
 
     // 프로필 수정 다이얼로그

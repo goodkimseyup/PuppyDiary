@@ -5,10 +5,11 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "puppy")
 data class PuppyEntity(
-    @PrimaryKey
-    val id: Long = 1L, // 단일 강아지만 관리
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0L,
     val name: String,
     val breed: String,
     val birthDate: String,
-    val profileImage: String? = null
+    val profileImage: String? = null,
+    val isSelected: Boolean = false // 현재 선택된 강아지
 )

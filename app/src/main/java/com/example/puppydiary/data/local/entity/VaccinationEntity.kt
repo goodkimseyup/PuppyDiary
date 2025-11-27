@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 data class VaccinationEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+    val puppyId: Long = 0,
     val date: String,
     val vaccine: String,
     val nextDate: String,
