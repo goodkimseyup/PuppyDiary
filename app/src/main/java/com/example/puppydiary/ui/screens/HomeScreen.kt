@@ -21,6 +21,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.puppydiary.data.model.DiaryEntry
+import com.example.puppydiary.data.model.PhotoMemory
 import com.example.puppydiary.data.model.Vaccination
 import com.example.puppydiary.data.model.WeightRecord
 import com.example.puppydiary.ui.components.PuppyProfileCard
@@ -43,6 +44,7 @@ sealed class RecentActivity(val date: String, val timestamp: Long) {
     data class Weight(val record: WeightRecord, val d: String, val t: Long) : RecentActivity(d, t)
     data class Vaccine(val vaccination: Vaccination, val d: String, val t: Long) : RecentActivity(d, t)
     data class Diary(val entry: DiaryEntry, val d: String, val t: Long) : RecentActivity(d, t)
+    data class Photo(val photo: PhotoMemory, val d: String, val t: Long) : RecentActivity(d, t)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,12 +55,13 @@ fun HomeScreen(viewModel: PuppyViewModel) {
     val diaryEntries by viewModel.diaryEntries.collectAsState()
     val weightRecords by viewModel.weightRecords.collectAsState()
     val vaccinations by viewModel.vaccinations.collectAsState()
+    val photoMemories by viewModel.photoMemories.collectAsState()
 
     // 현재 몸무게 (weightRecords가 변경될 때마다 자동 업데이트)
     val currentWeight = weightRecords.lastOrNull()?.weight ?: 0f
 
     // 최근 활동 통합 (날짜순 정렬)
-    val recentActivities = remember(diaryEntries, weightRecords, vaccinations) {
+    val recentActivities = remember(diaryEntries, weightRecords, vaccinations, photoMemories) {
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         
         val activities = mutableListOf<RecentActivity>()
@@ -85,6 +88,14 @@ fun HomeScreen(viewModel: PuppyViewModel) {
                 dateFormat.parse(vaccine.date)?.time ?: 0L
             } catch (e: Exception) { 0L }
             activities.add(RecentActivity.Vaccine(vaccine, vaccine.date, timestamp))
+        }
+        
+        // 사진 추가
+        photoMemories.forEach { photo ->
+            val timestamp = try {
+                dateFormat.parse(photo.date)?.time ?: 0L
+            } catch (e: Exception) { 0L }
+            activities.add(RecentActivity.Photo(photo, photo.date, timestamp))
         }
         
         // 최신순 정렬 후 상위 5개
@@ -268,6 +279,16 @@ fun HomeScreen(viewModel: PuppyViewModel) {
                         iconColor = Color(0xFF4CAF50),
                         title = activity.vaccination.vaccine,
                         subtitle = "예방접종 (다음: ${activity.vaccination.nextDate})",
+                        date = activity.date,
+                        onClick = { }
+                    )
+                }
+                is RecentActivity.Photo -> {
+                    ActivityCard(
+                        icon = Icons.Default.Face,
+                        iconColor = Color(0xFFE91E63),
+                        title = if (activity.photo.description.isNotEmpty()) activity.photo.description else "사진",
+                        subtitle = "사진첩",
                         date = activity.date,
                         onClick = { }
                     )
