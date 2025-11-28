@@ -32,9 +32,12 @@ import com.example.puppydiary.viewmodel.PuppyViewModel
 import com.example.puppydiary.utils.allBreedList
 import com.example.puppydiary.utils.getBreedEmoji
 import com.example.puppydiary.ui.theme.AppColors
-import androidx.navigation.NavController
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -44,7 +47,10 @@ val breedList = allBreedList
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
+fun HomeScreen(
+    viewModel: PuppyViewModel,
+    onNavigateToGallery: () -> Unit = { }
+) {
     val context = LocalContext.current
     val puppyData by viewModel.puppyData.collectAsState()
     val allPuppies by viewModel.allPuppies.collectAsState()
@@ -97,6 +103,21 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
     var editBirthDate by remember { mutableStateOf("") }
     var showBreedDropdown by remember { mutableStateOf(false) }
 
+    // 최근 활동 수정/삭제 다이얼로그 상태
+    var showEditWeightDialog by remember { mutableStateOf(false) }
+    var showEditVaccinationDialog by remember { mutableStateOf(false) }
+    var showEditDiaryDialog by remember { mutableStateOf(false) }
+    var selectedWeightRecord by remember { mutableStateOf<WeightRecord?>(null) }
+    var selectedVaccination by remember { mutableStateOf<Vaccination?>(null) }
+    var selectedDiaryEntry by remember { mutableStateOf<DiaryEntry?>(null) }
+    var editWeightInput by remember { mutableStateOf("") }
+    var editVaccineInput by remember { mutableStateOf("") }
+    var editNextDateInput by remember { mutableStateOf("") }
+    var editCompletedInput by remember { mutableStateOf(false) }
+    var editTitleInput by remember { mutableStateOf("") }
+    var editContentInput by remember { mutableStateOf("") }
+    var editDiaryPhotoPath by remember { mutableStateOf<String?>(null) }
+
     // DatePicker 상태
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = System.currentTimeMillis()
@@ -121,6 +142,27 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
                     }
                 }
                 viewModel.updateProfileImage(file.absolutePath)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+    
+    // 이미지 선택 런처 (일기 사진 수정용)
+    val diaryImagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            try {
+                val inputStream = context.contentResolver.openInputStream(it)
+                val fileName = "diary_${System.currentTimeMillis()}.jpg"
+                val file = File(context.filesDir, fileName)
+                inputStream?.use { input ->
+                    file.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                editDiaryPhotoPath = file.absolutePath
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -151,7 +193,7 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "나의반쪽",
+                            text = "펫 다이어리",
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground
@@ -268,7 +310,7 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 QuickActionButton(
                     icon = Icons.Default.Star,
@@ -290,6 +332,13 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
                     color = Color(0xFF9C27B0),
                     modifier = Modifier.weight(1f),
                     onClick = { showDiaryDialog = true }
+                )
+                QuickActionButton(
+                    icon = Icons.Default.Face,
+                    label = "사진첩",
+                    color = Color(0xFFE91E63),
+                    modifier = Modifier.weight(1f),
+                    onClick = { onNavigateToGallery() }
                 )
             }
         }
@@ -406,7 +455,13 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
                         title = activity.title,
                         subtitle = "일기",
                         date = activity.date,
-                        onClick = { navController.navigate("diary") }
+                        onClick = {
+                            selectedDiaryEntry = activity
+                            editTitleInput = activity.title
+                            editContentInput = activity.content
+                            editDiaryPhotoPath = activity.photo
+                            showEditDiaryDialog = true
+                        }
                     )
                 }
                 is WeightRecord -> {
@@ -416,7 +471,11 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
                         title = "${activity.weight} kg",
                         subtitle = "몸무게 기록",
                         date = activity.date,
-                        onClick = { navController.navigate("stats") }
+                        onClick = {
+                            selectedWeightRecord = activity
+                            editWeightInput = activity.weight.toString()
+                            showEditWeightDialog = true
+                        }
                     )
                 }
                 is Vaccination -> {
@@ -426,7 +485,13 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
                         title = activity.vaccine,
                         subtitle = "예방접종 (다음: ${activity.nextDate})",
                         date = activity.date,
-                        onClick = { navController.navigate("stats") }
+                        onClick = {
+                            selectedVaccination = activity
+                            editVaccineInput = activity.vaccine
+                            editNextDateInput = activity.nextDate
+                            editCompletedInput = activity.completed
+                            showEditVaccinationDialog = true
+                        }
                     )
                 }
                 is PhotoMemory -> {
@@ -436,7 +501,7 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
                         title = if (activity.description.isNotEmpty()) activity.description else "사진",
                         subtitle = "사진첩",
                         date = activity.date,
-                        onClick = { navController.navigate("gallery") }
+                        onClick = { onNavigateToGallery() }
                     )
                 }
             }
@@ -525,7 +590,7 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
                             .fillMaxWidth()
                             .clickable {
                                 showPuppySelector = false
-                                navController.navigate("register")
+                                scope.launch { snackbarHostState.showSnackbar("앱을 재시작하면 새 반려동물을 등록할 수 있습니다") }
                             }
                     ) {
                         Row(
@@ -913,6 +978,273 @@ fun HomeScreen(viewModel: PuppyViewModel, navController: NavController) {
             }
         )
     }
+    
+    // ===== 최근 활동 수정/삭제 다이얼로그 =====
+    
+    // 몸무게 수정/삭제 다이얼로그
+    if (showEditWeightDialog && selectedWeightRecord != null) {
+        AlertDialog(
+            onDismissRequest = { showEditWeightDialog = false },
+            title = { Text("⚖️ 몸무게 수정") },
+            text = {
+                Column {
+                    Text(
+                        text = "날짜: ${selectedWeightRecord!!.date}",
+                        fontSize = 14.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                    OutlinedTextField(
+                        value = editWeightInput,
+                        onValueChange = { editWeightInput = it },
+                        label = { Text("몸무게 (kg)") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        editWeightInput.toFloatOrNull()?.let { weight ->
+                            viewModel.updateWeightRecord(selectedWeightRecord!!.id, weight)
+                            showEditWeightDialog = false
+                            scope.launch { snackbarHostState.showSnackbar("몸무게가 수정되었습니다") }
+                        }
+                    },
+                    enabled = editWeightInput.toFloatOrNull() != null
+                ) { Text("저장") }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(
+                        onClick = {
+                            viewModel.deleteWeightRecord(selectedWeightRecord!!.id)
+                            showEditWeightDialog = false
+                            scope.launch { snackbarHostState.showSnackbar("몸무게 기록이 삭제되었습니다") }
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("삭제")
+                    }
+                    TextButton(onClick = { showEditWeightDialog = false }) {
+                        Text("취소")
+                    }
+                }
+            }
+        )
+    }
+    
+    // 접종 수정/삭제 다이얼로그
+    if (showEditVaccinationDialog && selectedVaccination != null) {
+        AlertDialog(
+            onDismissRequest = { showEditVaccinationDialog = false },
+            title = { Text("💉 예방접종 수정") },
+            text = {
+                Column {
+                    Text(
+                        text = "접종일: ${selectedVaccination!!.date}",
+                        fontSize = 14.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                    OutlinedTextField(
+                        value = editVaccineInput,
+                        onValueChange = { editVaccineInput = it },
+                        label = { Text("백신명") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = editNextDateInput,
+                        onValueChange = { editNextDateInput = it },
+                        label = { Text("다음 접종일 (YYYY-MM-DD)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = editCompletedInput,
+                            onCheckedChange = { editCompletedInput = it }
+                        )
+                        Text("접종 완료")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.updateVaccination(
+                            selectedVaccination!!.id,
+                            editVaccineInput,
+                            editNextDateInput,
+                            editCompletedInput
+                        )
+                        showEditVaccinationDialog = false
+                        scope.launch { snackbarHostState.showSnackbar("접종 정보가 수정되었습니다") }
+                    },
+                    enabled = editVaccineInput.isNotEmpty() && editNextDateInput.isNotEmpty()
+                ) { Text("저장") }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(
+                        onClick = {
+                            viewModel.deleteVaccination(selectedVaccination!!.id)
+                            showEditVaccinationDialog = false
+                            scope.launch { snackbarHostState.showSnackbar("접종 정보가 삭제되었습니다") }
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("삭제")
+                    }
+                    TextButton(onClick = { showEditVaccinationDialog = false }) {
+                        Text("취소")
+                    }
+                }
+            }
+        )
+    }
+    
+    // 일기 수정/삭제 다이얼로그
+    if (showEditDiaryDialog && selectedDiaryEntry != null) {
+        AlertDialog(
+            onDismissRequest = { showEditDiaryDialog = false },
+            title = { Text("📝 일기 수정") },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "작성일: ${selectedDiaryEntry!!.date}",
+                        fontSize = 14.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                    OutlinedTextField(
+                        value = editTitleInput,
+                        onValueChange = { editTitleInput = it },
+                        label = { Text("제목") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = editContentInput,
+                        onValueChange = { editContentInput = it },
+                        label = { Text("내용") },
+                        minLines = 3,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    
+                    // 사진 표시/수정 영역
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "📷 사진",
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    if (editDiaryPhotoPath != null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(150.dp)
+                        ) {
+                            AsyncImage(
+                                model = ImageRequest.Builder(context)
+                                    .data(File(editDiaryPhotoPath!!))
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = "일기 사진",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(8.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                            // 사진 삭제 버튼
+                            IconButton(
+                                onClick = { editDiaryPhotoPath = null },
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(4.dp)
+                                    .background(
+                                        Color.Black.copy(alpha = 0.5f),
+                                        RoundedCornerShape(50)
+                                    )
+                            ) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "사진 삭제",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = { diaryImagePickerLauncher.launch("image/*") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("사진 변경")
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = { diaryImagePickerLauncher.launch("image/*") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("사진 추가")
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (editTitleInput.isNotEmpty() && editContentInput.isNotEmpty()) {
+                            viewModel.updateDiaryEntry(selectedDiaryEntry!!.id, editTitleInput, editContentInput, editDiaryPhotoPath)
+                            showEditDiaryDialog = false
+                            scope.launch { snackbarHostState.showSnackbar("일기가 수정되었습니다") }
+                        }
+                    },
+                    enabled = editTitleInput.isNotEmpty() && editContentInput.isNotEmpty()
+                ) { Text("저장") }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(
+                        onClick = {
+                            viewModel.deleteDiaryEntry(selectedDiaryEntry!!.id)
+                            showEditDiaryDialog = false
+                            scope.launch { snackbarHostState.showSnackbar("일기가 삭제되었습니다") }
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("삭제")
+                    }
+                    TextButton(onClick = { showEditDiaryDialog = false }) {
+                        Text("취소")
+                    }
+                }
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1005,11 +1337,11 @@ fun QuickActionButton(
         modifier = modifier
             .shadow(
                 elevation = 6.dp,
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
                 ambientColor = color.copy(alpha = 0.15f),
                 spotColor = color.copy(alpha = 0.15f)
             ),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
@@ -1017,16 +1349,16 @@ fun QuickActionButton(
     ) {
         Column(
             modifier = Modifier
-                .padding(vertical = 20.dp, horizontal = 16.dp)
+                .padding(vertical = 14.dp, horizontal = 8.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
                 modifier = Modifier
-                    .size(52.dp)
+                    .size(40.dp)
                     .background(
                         color.copy(alpha = 0.12f),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(12.dp)
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -1034,15 +1366,15 @@ fun QuickActionButton(
                     icon,
                     contentDescription = null,
                     tint = color,
-                    modifier = Modifier.size(26.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = label,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Medium,
-                fontSize = 13.sp
+                fontSize = 11.sp
             )
         }
     }

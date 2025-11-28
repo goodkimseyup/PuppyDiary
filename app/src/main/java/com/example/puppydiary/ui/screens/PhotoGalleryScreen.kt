@@ -36,7 +36,10 @@ import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PhotoGalleryScreen(viewModel: PuppyViewModel) {
+fun PhotoGalleryScreen(
+    viewModel: PuppyViewModel,
+    onBack: () -> Unit = {}
+) {
     val context = LocalContext.current
     val photoMemories by viewModel.photoMemories.collectAsState()
     
@@ -98,6 +101,13 @@ fun PhotoGalleryScreen(viewModel: PuppyViewModel) {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = 16.dp)
             ) {
+                // 뒤로가기 버튼
+                IconButton(onClick = onBack) {
+                    Icon(
+                        Icons.Default.ArrowBack,
+                        contentDescription = "뒤로가기"
+                    )
+                }
                 Text(
                     text = "📷",
                     fontSize = 28.sp

@@ -18,11 +18,21 @@ interface WeightRecordDao {
     @Query("SELECT * FROM weight_records WHERE puppyId = :puppyId ORDER BY date DESC LIMIT 1")
     suspend fun getLatestWeightRecord(puppyId: Long): WeightRecordEntity?
 
+    // LIKE 검색 (날짜로 검색)
+    @Query("SELECT * FROM weight_records WHERE puppyId = :puppyId AND date LIKE '%' || :query || '%' ORDER BY date DESC")
+    fun searchByPuppy(puppyId: Long, query: String): Flow<List<WeightRecordEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(weightRecord: WeightRecordEntity)
 
+    @Update
+    suspend fun update(weightRecord: WeightRecordEntity)
+
     @Delete
     suspend fun delete(weightRecord: WeightRecordEntity)
+
+    @Query("DELETE FROM weight_records WHERE id = :id")
+    suspend fun deleteById(id: Long)
 
     @Query("DELETE FROM weight_records WHERE puppyId = :puppyId")
     suspend fun deleteByPuppy(puppyId: Long)

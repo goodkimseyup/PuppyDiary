@@ -67,7 +67,7 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
         .map { entities ->
-            entities.map { WeightRecord(it.date, it.weight) }
+            entities.map { WeightRecord(it.id, it.date, it.weight) }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -81,7 +81,7 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
         .map { entities ->
-            entities.map { Vaccination(it.date, it.vaccine, it.nextDate, it.completed) }
+            entities.map { Vaccination(it.id, it.date, it.vaccine, it.nextDate, it.completed) }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -130,11 +130,11 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
                     }
 
                     weights.forEach { record ->
-                        activities.add(Pair(WeightRecord(record.date, record.weight), record.createdAt))
+                        activities.add(Pair(WeightRecord(record.id, record.date, record.weight), record.createdAt))
                     }
 
                     vaccines.forEach { vaccine ->
-                        activities.add(Pair(Vaccination(vaccine.date, vaccine.vaccine, vaccine.nextDate, vaccine.completed), vaccine.createdAt))
+                        activities.add(Pair(Vaccination(vaccine.id, vaccine.date, vaccine.vaccine, vaccine.nextDate, vaccine.completed), vaccine.createdAt))
                     }
 
                     photos.forEach { photo ->
@@ -276,6 +276,72 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteDiaryEntry(id: Long) {
         viewModelScope.launch {
             diaryEntryDao.deleteById(id)
+        }
+    }
+
+    // 일기 수정
+    fun updateDiaryEntry(id: Long, title: String, content: String, photo: String? = null) {
+        viewModelScope.launch {
+            val puppyId = puppyData.value?.id ?: return@launch
+            val existing = diaryEntries.value.find { it.id == id } ?: return@launch
+            diaryEntryDao.update(
+                DiaryEntryEntity(
+                    id = id,
+                    puppyId = puppyId,
+                    date = existing.date,
+                    title = title,
+                    content = content,
+                    photo = photo
+                )
+            )
+        }
+    }
+
+    // 예방접종 삭제
+    fun deleteVaccination(id: Long) {
+        viewModelScope.launch {
+            vaccinationDao.deleteById(id)
+        }
+    }
+
+    // 예방접종 수정
+    fun updateVaccination(id: Long, vaccine: String, nextDate: String, completed: Boolean) {
+        viewModelScope.launch {
+            val puppyId = puppyData.value?.id ?: return@launch
+            val existing = vaccinations.value.find { it.id == id } ?: return@launch
+            vaccinationDao.update(
+                VaccinationEntity(
+                    id = id,
+                    puppyId = puppyId,
+                    date = existing.date,
+                    vaccine = vaccine,
+                    nextDate = nextDate,
+                    completed = completed
+                )
+            )
+        }
+    }
+
+    // 몸무게 삭제
+    fun deleteWeightRecord(id: Long) {
+        viewModelScope.launch {
+            weightRecordDao.deleteById(id)
+        }
+    }
+
+    // 몸무게 수정
+    fun updateWeightRecord(id: Long, weight: Float) {
+        viewModelScope.launch {
+            val puppyId = puppyData.value?.id ?: return@launch
+            val existing = weightRecords.value.find { it.id == id } ?: return@launch
+            weightRecordDao.update(
+                WeightRecordEntity(
+                    id = id,
+                    puppyId = puppyId,
+                    date = existing.date,
+                    weight = weight
+                )
+            )
         }
     }
 

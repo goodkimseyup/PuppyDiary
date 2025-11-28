@@ -1,7 +1,8 @@
 package com.example.puppydiary.ui.components
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -22,7 +23,6 @@ fun BottomNavigation(navController: NavController) {
         NavigationItem("home", "홈", Icons.Filled.Home, Icons.Default.Home),
         NavigationItem("stats", "통계", Icons.Filled.Info, Icons.Default.Info),
         NavigationItem("diary", "일기", Icons.Filled.Create, Icons.Default.Create),
-        NavigationItem("gallery", "사진첩", Icons.Filled.Favorite, Icons.Default.Favorite),
         NavigationItem("settings", "설정", Icons.Filled.Settings, Icons.Default.Settings)
     )
 
@@ -48,20 +48,20 @@ fun BottomNavigation(navController: NavController) {
         ) {
             items.forEach { item ->
                 val isSelected = currentRoute == item.route
-                
+
                 NavigationBarItem(
-                    icon = { 
+                    icon = {
                         Icon(
-                            if (isSelected) item.selectedIcon else item.unselectedIcon, 
+                            if (isSelected) item.selectedIcon else item.unselectedIcon,
                             contentDescription = item.title,
                             modifier = Modifier.size(24.dp)
-                        ) 
+                        )
                     },
-                    label = { 
+                    label = {
                         Text(
                             item.title,
                             style = MaterialTheme.typography.labelSmall
-                        ) 
+                        )
                     },
                     selected = isSelected,
                     onClick = {
@@ -73,6 +73,69 @@ fun BottomNavigation(navController: NavController) {
                             restoreState = true
                         }
                     },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = AppColors.Primary,
+                        selectedTextColor = AppColors.Primary,
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        indicatorColor = AppColors.Primary.copy(alpha = 0.12f)
+                    )
+                )
+            }
+        }
+    }
+}
+
+// Pager용 BottomNavigation
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun BottomNavigationWithPager(
+    pagerState: PagerState,
+    onPageSelected: (Int) -> Unit
+) {
+    val items = listOf(
+        NavigationItem("home", "홈", Icons.Filled.Home, Icons.Default.Home),
+        NavigationItem("stats", "통계", Icons.Filled.Info, Icons.Default.Info),
+        NavigationItem("diary", "일기", Icons.Filled.Create, Icons.Default.Create),
+        NavigationItem("settings", "설정", Icons.Filled.Settings, Icons.Default.Settings)
+    )
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 20.dp,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                ambientColor = Color.Black.copy(alpha = 0.1f),
+                spotColor = Color.Black.copy(alpha = 0.1f)
+            ),
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        NavigationBar(
+            containerColor = Color.Transparent,
+            tonalElevation = 0.dp,
+            modifier = Modifier.height(80.dp)
+        ) {
+            items.forEachIndexed { index, item ->
+                val isSelected = pagerState.currentPage == index
+
+                NavigationBarItem(
+                    icon = {
+                        Icon(
+                            if (isSelected) item.selectedIcon else item.unselectedIcon,
+                            contentDescription = item.title,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
+                    label = {
+                        Text(
+                            item.title,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    },
+                    selected = isSelected,
+                    onClick = { onPageSelected(index) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = AppColors.Primary,
                         selectedTextColor = AppColors.Primary,
