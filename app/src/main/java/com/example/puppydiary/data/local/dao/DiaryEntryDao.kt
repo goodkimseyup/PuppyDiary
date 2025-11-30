@@ -15,6 +15,10 @@ interface DiaryEntryDao {
     @Query("SELECT * FROM diary_entries WHERE id = :id")
     suspend fun getDiaryEntryById(id: Long): DiaryEntryEntity?
 
+    // LIKE 검색
+    @Query("SELECT * FROM diary_entries WHERE puppyId = :puppyId AND (title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%') ORDER BY date DESC")
+    fun searchByPuppy(puppyId: Long, query: String): Flow<List<DiaryEntryEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(diaryEntry: DiaryEntryEntity): Long
 

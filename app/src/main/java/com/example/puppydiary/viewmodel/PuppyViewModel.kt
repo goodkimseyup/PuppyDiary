@@ -1,4 +1,4 @@
-package com.example.puppydiary.viewmodel
+﻿package com.example.puppydiary.viewmodel
 
 import android.app.Application
 import android.util.Log
@@ -152,6 +152,54 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
     var selectedDateRange = mutableStateOf(DateRange.MONTH)
         private set
 
+    // 검색 쿼리
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    // 검색 쿼리 설정
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+
+    // LIKE 검색 결과
+    val searchResults: StateFlow<List<Any>> = combine(
+        puppyData,
+        _searchQuery
+    ) { puppy, query ->
+        Pair(puppy, query)
+    }.flatMapLatest { (puppy, query) ->
+        if (puppy == null || query.isBlank()) {
+            flowOf(emptyList())
+        } else {
+            combine(
+                diaryEntryDao.searchByPuppy(puppy.id, query),
+                vaccinationDao.searchByPuppy(puppy.id, query),
+                photoMemoryDao.searchByPuppy(puppy.id, query),
+                weightRecordDao.searchByPuppy(puppy.id, query)
+            ) { diaries, vaccines, photos, weights ->
+                val results = mutableListOf<Pair<Any, Long>>()
+
+                diaries.forEach { entry ->
+                    results.add(Pair(DiaryEntry(entry.id, entry.date, entry.title, entry.content, entry.photo), entry.createdAt))
+                }
+
+                vaccines.forEach { vaccine ->
+                    results.add(Pair(Vaccination(vaccine.id, vaccine.date, vaccine.vaccine, vaccine.nextDate, vaccine.completed), vaccine.createdAt))
+                }
+
+                photos.forEach { photo ->
+                    results.add(Pair(PhotoMemory(photo.id, photo.photo, photo.date, photo.weight, photo.description, photo.diaryEntryId), photo.createdAt))
+                }
+
+                weights.forEach { record ->
+                    results.add(Pair(WeightRecord(record.id, record.date, record.weight), record.createdAt))
+                }
+
+                results.sortedByDescending { it.second }.map { it.first }
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     // 강아지 등록 (첫 번째 또는 추가)
     fun registerPuppy(name: String, breed: String, birthDate: String, profileImageUri: String?) {
         viewModelScope.launch {
@@ -219,6 +267,32 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 )
             }
+        }
+    }
+
+    // 새 반려동물 추가
+    fun addNewPuppy(name: String, breed: String, birthDate: String) {
+        viewModelScope.launch {
+            // 기존 강아지들의 선택 해제
+            val allPuppies = puppyDao.getAllPuppies().first()
+            allPuppies.forEach { puppy ->
+                if (puppy.isSelected) {
+                    puppyDao.update(puppy.copy(isSelected = false))
+                }
+            }
+            
+            // 새 강아지 추가 (선택됨 상태로)
+            val newPuppyId = puppyDao.insert(
+                PuppyEntity(
+                    name = name,
+                    breed = breed,
+                    birthDate = birthDate,
+                    profileImage = null,
+                    isSelected = true
+                )
+            )
+            
+            Log.d("PuppyDiary", "New puppy added: $name (id: $newPuppyId)")
         }
     }
 
