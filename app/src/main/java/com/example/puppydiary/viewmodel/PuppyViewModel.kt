@@ -374,6 +374,8 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
     // 예방접종 삭제
     fun deleteVaccination(id: Long) {
         viewModelScope.launch {
+            // 알람 취소
+            AlarmScheduler.cancelVaccinationAlarm(context, id.toInt())
             vaccinationDao.deleteById(id)
         }
     }
@@ -383,6 +385,10 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val puppyId = puppyData.value?.id ?: return@launch
             val existing = vaccinations.value.find { it.id == id } ?: return@launch
+            
+            // 기존 알람 취소
+            AlarmScheduler.cancelVaccinationAlarm(context, id.toInt())
+            
             vaccinationDao.update(
                 VaccinationEntity(
                     id = id,
@@ -393,6 +399,16 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
                     completed = completed
                 )
             )
+            
+            // 완료되지 않은 경우에만 새 알람 예약
+            if (!completed && nextDate.isNotBlank()) {
+                AlarmScheduler.scheduleVaccinationAlarm(
+                    context = context,
+                    vaccineName = vaccine,
+                    nextDate = nextDate,
+                    notificationId = id.toInt()
+                )
+            }
         }
     }
 

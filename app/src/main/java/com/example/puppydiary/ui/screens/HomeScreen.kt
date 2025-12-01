@@ -114,6 +114,7 @@ fun HomeScreen(
     var editTitleInput by remember { mutableStateOf("") }
     var editContentInput by remember { mutableStateOf("") }
     var editDiaryPhotoPath by remember { mutableStateOf<String?>(null) }
+    var newDiaryPhotoPath by remember { mutableStateOf<String?>(null) }
 
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
     val birthDatePickerState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
@@ -152,6 +153,26 @@ fun HomeScreen(
                     }
                 }
                 editDiaryPhotoPath = file.absolutePath
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    val newDiaryImagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            try {
+                val inputStream = context.contentResolver.openInputStream(it)
+                val fileName = "diary_${System.currentTimeMillis()}.jpg"
+                val file = File(context.filesDir, fileName)
+                inputStream?.use { input ->
+                    file.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                newDiaryPhotoPath = file.absolutePath
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -712,26 +733,47 @@ fun HomeScreen(
 
     if (showDiaryDialog) {
         AlertDialog(
-            onDismissRequest = { showDiaryDialog = false },
+            onDismissRequest = { showDiaryDialog = false; newDiaryPhotoPath = null },
             title = { Text("일기 작성") },
             text = {
-                Column {
-                    OutlinedTextField(value = titleInput, onValueChange = { titleInput = it }, label = { Text("제목") }, singleLine = true)
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(value = titleInput, onValueChange = { titleInput = it }, label = { Text("제목") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(value = contentInput, onValueChange = { contentInput = it }, label = { Text("내용") }, minLines = 3)
+                    OutlinedTextField(value = contentInput, onValueChange = { contentInput = it }, label = { Text("내용") }, minLines = 3, modifier = Modifier.fillMaxWidth())
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(text = "📷 사진 (선택)", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (newDiaryPhotoPath != null) {
+                        Box(modifier = Modifier.fillMaxWidth().height(150.dp)) {
+                            AsyncImage(
+                                model = ImageRequest.Builder(context).data(File(newDiaryPhotoPath!!)).crossfade(true).build(),
+                                contentDescription = "일기 사진",
+                                modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                            IconButton(
+                                onClick = { newDiaryPhotoPath = null },
+                                modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(50))
+                            ) { Icon(Icons.Default.Close, contentDescription = "사진 삭제", tint = Color.White, modifier = Modifier.size(18.dp)) }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(onClick = { newDiaryImagePickerLauncher.launch("image/*") }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp)); Spacer(modifier = Modifier.width(8.dp)); Text("사진 변경") }
+                    } else {
+                        OutlinedButton(onClick = { newDiaryImagePickerLauncher.launch("image/*") }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp)); Spacer(modifier = Modifier.width(8.dp)); Text("사진 추가") }
+                    }
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
                     if (titleInput.isNotEmpty() && contentInput.isNotEmpty()) {
-                        viewModel.addDiaryEntry(titleInput, contentInput)
-                        titleInput = ""; contentInput = ""
+                        viewModel.addDiaryEntry(titleInput, contentInput, newDiaryPhotoPath)
+                        titleInput = ""; contentInput = ""; newDiaryPhotoPath = null
                         showDiaryDialog = false
                         scope.launch { snackbarHostState.showSnackbar("일기가 저장되었습니다") }
                     }
                 }) { Text("저장") }
             },
-            dismissButton = { TextButton(onClick = { showDiaryDialog = false }) { Text("취소") } }
+            dismissButton = { TextButton(onClick = { showDiaryDialog = false; newDiaryPhotoPath = null }) { Text("취소") } }
         )
     }
     
