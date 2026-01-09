@@ -12,6 +12,9 @@ interface PhotoMemoryDao {
     @Query("SELECT * FROM photo_memories ORDER BY date DESC")
     fun getAllPhotoMemories(): Flow<List<PhotoMemoryEntity>>
 
+    @Query("SELECT * FROM photo_memories WHERE puppyId = :puppyId ORDER BY date DESC")
+    suspend fun getPhotosByPuppyOnce(puppyId: Long): List<PhotoMemoryEntity>
+
     // LIKE 검색
     @Query("SELECT * FROM photo_memories WHERE puppyId = :puppyId AND description LIKE '%' || :query || '%' ORDER BY date DESC")
     fun searchByPuppy(puppyId: Long, query: String): Flow<List<PhotoMemoryEntity>>

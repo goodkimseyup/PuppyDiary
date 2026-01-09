@@ -15,9 +15,14 @@ import com.example.puppydiary.data.local.entity.*
         VaccinationEntity::class,
         AchievementEntity::class,
         VaccinationReminderEntity::class,
-        PhotoMemoryEntity::class
+        PhotoMemoryEntity::class,
+        WalkRecordEntity::class,
+        MealRecordEntity::class,
+        HospitalVisitEntity::class,
+        MedicationRecordEntity::class,
+        EmergencyContactEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class PuppyDatabase : RoomDatabase() {
@@ -29,6 +34,11 @@ abstract class PuppyDatabase : RoomDatabase() {
     abstract fun achievementDao(): AchievementDao
     abstract fun vaccinationReminderDao(): VaccinationReminderDao
     abstract fun photoMemoryDao(): PhotoMemoryDao
+    abstract fun walkRecordDao(): WalkRecordDao
+    abstract fun mealRecordDao(): MealRecordDao
+    abstract fun hospitalVisitDao(): HospitalVisitDao
+    abstract fun medicationRecordDao(): MedicationRecordDao
+    abstract fun emergencyContactDao(): EmergencyContactDao
 
     companion object {
         @Volatile

@@ -115,7 +115,7 @@ object AlarmScheduler {
      */
     fun cancelVaccinationAlarm(context: Context, notificationId: Int) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        
+
         val intent = Intent(context, AlarmReceiver::class.java)
         val pendingIntent = PendingIntent.getBroadcast(
             context,
@@ -123,11 +123,107 @@ object AlarmScheduler {
             intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_NO_CREATE
         )
-        
+
         pendingIntent?.let {
             alarmManager.cancel(it)
             it.cancel()
             Log.d(TAG, "알람 취소 완료: $notificationId")
         }
+    }
+
+    /**
+     * 투약 알람 예약 (당일 오전 9시)
+     */
+    fun scheduleMedicationAlarm(
+        context: Context,
+        medicationName: String,
+        nextDate: String,
+        notificationId: Int
+    ) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val medicationDate = try {
+            dateFormat.parse(nextDate)
+        } catch (e: Exception) {
+            Log.e(TAG, "날짜 파싱 실패: $nextDate", e)
+            return
+        }
+
+        if (medicationDate == null) {
+            Log.e(TAG, "날짜가 null입니다: $nextDate")
+            return
+        }
+
+        // 투약일 오전 9시
+        val calendar = Calendar.getInstance().apply {
+            time = medicationDate
+            set(Calendar.HOUR_OF_DAY, 9)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        val alarmTime = calendar.timeInMillis
+        val currentTime = System.currentTimeMillis()
+
+        if (alarmTime <= currentTime) {
+            Log.d(TAG, "알람 시간이 이미 지났습니다: $medicationName")
+            return
+        }
+
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            putExtra(AlarmReceiver.EXTRA_MEDICATION_NAME, medicationName)
+            putExtra(AlarmReceiver.EXTRA_NEXT_DATE, nextDate)
+            putExtra(AlarmReceiver.EXTRA_NOTIFICATION_ID, notificationId)
+            putExtra(AlarmReceiver.EXTRA_IS_MEDICATION, true)
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            notificationId,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (alarmManager.canScheduleExactAlarms()) {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        alarmTime,
+                        pendingIntent
+                    )
+                } else {
+                    alarmManager.setAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        alarmTime,
+                        pendingIntent
+                    )
+                }
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    alarmTime,
+                    pendingIntent
+                )
+            } else {
+                alarmManager.setExact(
+                    AlarmManager.RTC_WAKEUP,
+                    alarmTime,
+                    pendingIntent
+                )
+            }
+            Log.d(TAG, "투약 알람 예약 완료: $medicationName, 날짜: $nextDate")
+        } catch (e: SecurityException) {
+            Log.e(TAG, "알람 예약 권한 오류", e)
+        }
+    }
+
+    /**
+     * 투약 알람 취소
+     */
+    fun cancelMedicationAlarm(context: Context, notificationId: Int) {
+        cancelVaccinationAlarm(context, notificationId)
     }
 }

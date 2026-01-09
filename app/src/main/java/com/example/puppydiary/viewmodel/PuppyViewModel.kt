@@ -1,4 +1,4 @@
-﻿package com.example.puppydiary.viewmodel
+package com.example.puppydiary.viewmodel
 
 import android.app.Application
 import android.util.Log
@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.puppydiary.data.local.PuppyDatabase
 import com.example.puppydiary.data.local.entity.*
 import com.example.puppydiary.data.model.*
+import com.example.puppydiary.utils.AchievementManager
 import com.example.puppydiary.utils.AlarmScheduler
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -24,6 +25,25 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
     private val diaryEntryDao = database.diaryEntryDao()
     private val achievementDao = database.achievementDao()
     private val photoMemoryDao = database.photoMemoryDao()
+    private val walkRecordDao = database.walkRecordDao()
+    private val mealRecordDao = database.mealRecordDao()
+    private val hospitalVisitDao = database.hospitalVisitDao()
+    private val medicationRecordDao = database.medicationRecordDao()
+    private val emergencyContactDao = database.emergencyContactDao()
+
+    init {
+        // 앱 시작 시 기본 업적 초기화
+        viewModelScope.launch {
+            initializeAchievements()
+        }
+    }
+
+    private suspend fun initializeAchievements() {
+        val existing = achievementDao.getAllAchievements().first()
+        if (existing.isEmpty()) {
+            achievementDao.insertAll(AchievementManager.getDefaultAchievements())
+        }
+    }
 
     // 현재 선택된 강아지
     val puppyData: StateFlow<PuppyData?> = puppyDao.getSelectedPuppy()
@@ -113,6 +133,103 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    // 선택된 강아지의 산책 기록
+    val walkRecords: StateFlow<List<WalkRecord>> = puppyData
+        .flatMapLatest { puppy ->
+            if (puppy != null) {
+                walkRecordDao.getRecordsByPuppy(puppy.id)
+            } else {
+                flowOf(emptyList())
+            }
+        }
+        .map { entities ->
+            entities.map { WalkRecord(it.id, it.date, it.startTime, it.endTime, it.durationMinutes, it.distanceMeters, it.note) }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // 선택된 강아지의 식사 기록
+    val mealRecords: StateFlow<List<MealRecord>> = puppyData
+        .flatMapLatest { puppy ->
+            if (puppy != null) {
+                mealRecordDao.getRecordsByPuppy(puppy.id)
+            } else {
+                flowOf(emptyList())
+            }
+        }
+        .map { entities ->
+            entities.map { MealRecord(it.id, it.date, it.time, it.foodType, it.foodName, it.amountGrams, it.note) }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // 선택된 강아지의 병원 방문 기록
+    val hospitalVisits: StateFlow<List<HospitalVisit>> = puppyData
+        .flatMapLatest { puppy ->
+            if (puppy != null) {
+                hospitalVisitDao.getVisitsByPuppy(puppy.id)
+            } else {
+                flowOf(emptyList())
+            }
+        }
+        .map { entities ->
+            entities.map { HospitalVisit(it.id, it.date, it.hospitalName, it.visitReason, it.diagnosis, it.treatment, it.prescription, it.cost, it.nextVisitDate, it.note) }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // 선택된 강아지의 투약 기록
+    val medicationRecords: StateFlow<List<MedicationRecord>> = puppyData
+        .flatMapLatest { puppy ->
+            if (puppy != null) {
+                medicationRecordDao.getRecordsByPuppy(puppy.id)
+            } else {
+                flowOf(emptyList())
+            }
+        }
+        .map { entities ->
+            entities.map { MedicationRecord(it.id, it.date, it.medicationType, it.medicationName, it.nextDate, it.intervalDays, it.note) }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // 선택된 강아지의 긴급 연락처
+    val emergencyContacts: StateFlow<List<EmergencyContact>> = puppyData
+        .flatMapLatest { puppy ->
+            if (puppy != null) {
+                emergencyContactDao.getContactsByPuppy(puppy.id)
+            } else {
+                flowOf(emptyList())
+            }
+        }
+        .map { entities ->
+            entities.map { EmergencyContact(it.id, it.contactType, it.name, it.phoneNumber, it.address, it.note) }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // 업적 목록
+    val achievements: StateFlow<List<Achievement>> = achievementDao.getAllAchievements()
+        .map { entities ->
+            entities.map {
+                Achievement(
+                    id = it.id,
+                    title = it.title,
+                    description = it.description,
+                    icon = it.icon,
+                    isUnlocked = it.isUnlocked,
+                    unlockedDate = it.unlockedDate,
+                    progress = it.progress,
+                    category = try {
+                        AchievementCategory.valueOf(it.category)
+                    } catch (e: Exception) {
+                        AchievementCategory.GENERAL
+                    }
+                )
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // 달성한 업적 수
+    val unlockedAchievementCount: StateFlow<Int> = achievements
+        .map { list -> list.count { it.isUnlocked } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
     // 최근 활동 통합 (선택된 강아지만)
     val recentActivities: StateFlow<List<Any>> = puppyData
         .flatMapLatest { puppy ->
@@ -141,7 +258,7 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
                         activities.add(Pair(PhotoMemory(photo.id, photo.photo, photo.date, photo.weight, photo.description, photo.diaryEntryId), photo.createdAt))
                     }
 
-                    activities.sortedByDescending { it.second }.take(5).map { it.first }
+                    activities.sortedByDescending { it.second }.take(10).map { it.first }
                 }
             } else {
                 flowOf(emptyList())
@@ -234,6 +351,11 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
             vaccinationDao.deleteByPuppy(puppyId)
             diaryEntryDao.deleteByPuppy(puppyId)
             photoMemoryDao.deleteByPuppy(puppyId)
+            walkRecordDao.deleteByPuppy(puppyId)
+            mealRecordDao.deleteByPuppy(puppyId)
+            hospitalVisitDao.deleteByPuppy(puppyId)
+            medicationRecordDao.deleteByPuppy(puppyId)
+            emergencyContactDao.deleteByPuppy(puppyId)
             puppyDao.deleteById(puppyId)
 
             // 남은 강아지 중 첫 번째를 선택
@@ -280,7 +402,7 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
                     puppyDao.update(puppy.copy(isSelected = false))
                 }
             }
-            
+
             // 새 강아지 추가 (선택됨 상태로)
             val newPuppyId = puppyDao.insert(
                 PuppyEntity(
@@ -291,7 +413,7 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
                     isSelected = true
                 )
             )
-            
+
             Log.d("PuppyDiary", "New puppy added: $name (id: $newPuppyId)")
         }
     }
@@ -302,6 +424,7 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
             val puppyId = puppyData.value?.id ?: return@launch
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
             weightRecordDao.insert(WeightRecordEntity(puppyId = puppyId, date = today, weight = weight))
+            checkAndUpdateAchievements()
         }
     }
 
@@ -326,6 +449,7 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
                 nextDate = nextDate,
                 notificationId = insertedId.toInt()
             )
+            checkAndUpdateAchievements()
         }
     }
 
@@ -343,6 +467,7 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
                     photo = photo
                 )
             )
+            checkAndUpdateAchievements()
         }
     }
 
@@ -385,10 +510,10 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val puppyId = puppyData.value?.id ?: return@launch
             val existing = vaccinations.value.find { it.id == id } ?: return@launch
-            
+
             // 기존 알람 취소
             AlarmScheduler.cancelVaccinationAlarm(context, id.toInt())
-            
+
             vaccinationDao.update(
                 VaccinationEntity(
                     id = id,
@@ -399,7 +524,7 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
                     completed = completed
                 )
             )
-            
+
             // 완료되지 않은 경우에만 새 알람 예약
             if (!completed && nextDate.isNotBlank()) {
                 AlarmScheduler.scheduleVaccinationAlarm(
@@ -409,6 +534,7 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
                     notificationId = id.toInt()
                 )
             }
+            checkAndUpdateAchievements()
         }
     }
 
@@ -450,6 +576,7 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
                 )
             )
             Log.d("PuppyDiary", "Photo inserted successfully")
+            checkAndUpdateAchievements()
         }
     }
 
@@ -471,11 +598,345 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // ==================== 산책 기록 ====================
+    fun addWalkRecord(startTime: String, endTime: String, durationMinutes: Int, distanceMeters: Float? = null, note: String? = null) {
+        viewModelScope.launch {
+            val puppyId = puppyData.value?.id ?: return@launch
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            walkRecordDao.insert(
+                WalkRecordEntity(
+                    puppyId = puppyId,
+                    date = today,
+                    startTime = startTime,
+                    endTime = endTime,
+                    durationMinutes = durationMinutes,
+                    distanceMeters = distanceMeters,
+                    note = note
+                )
+            )
+            checkAndUpdateAchievements()
+        }
+    }
+
+    fun deleteWalkRecord(id: Long) {
+        viewModelScope.launch {
+            walkRecordDao.deleteById(id)
+        }
+    }
+
+    fun updateWalkRecord(id: Long, startTime: String, endTime: String, durationMinutes: Int, distanceMeters: Float?, note: String?) {
+        viewModelScope.launch {
+            val puppyId = puppyData.value?.id ?: return@launch
+            val existing = walkRecords.value.find { it.id == id } ?: return@launch
+            walkRecordDao.update(
+                WalkRecordEntity(
+                    id = id,
+                    puppyId = puppyId,
+                    date = existing.date,
+                    startTime = startTime,
+                    endTime = endTime,
+                    durationMinutes = durationMinutes,
+                    distanceMeters = distanceMeters,
+                    note = note
+                )
+            )
+        }
+    }
+
+    // ==================== 식사 기록 ====================
+    fun addMealRecord(time: String, foodType: String, foodName: String, amountGrams: Float, note: String? = null) {
+        viewModelScope.launch {
+            val puppyId = puppyData.value?.id ?: return@launch
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            mealRecordDao.insert(
+                MealRecordEntity(
+                    puppyId = puppyId,
+                    date = today,
+                    time = time,
+                    foodType = foodType,
+                    foodName = foodName,
+                    amountGrams = amountGrams,
+                    note = note
+                )
+            )
+            checkAndUpdateAchievements()
+        }
+    }
+
+    fun deleteMealRecord(id: Long) {
+        viewModelScope.launch {
+            mealRecordDao.deleteById(id)
+        }
+    }
+
+    fun updateMealRecord(id: Long, time: String, foodType: String, foodName: String, amountGrams: Float, note: String?) {
+        viewModelScope.launch {
+            val puppyId = puppyData.value?.id ?: return@launch
+            val existing = mealRecords.value.find { it.id == id } ?: return@launch
+            mealRecordDao.update(
+                MealRecordEntity(
+                    id = id,
+                    puppyId = puppyId,
+                    date = existing.date,
+                    time = time,
+                    foodType = foodType,
+                    foodName = foodName,
+                    amountGrams = amountGrams,
+                    note = note
+                )
+            )
+        }
+    }
+
+    // ==================== 병원 방문 기록 ====================
+    fun addHospitalVisit(
+        hospitalName: String,
+        visitReason: String,
+        diagnosis: String? = null,
+        treatment: String? = null,
+        prescription: String? = null,
+        cost: Int? = null,
+        nextVisitDate: String? = null,
+        note: String? = null
+    ) {
+        viewModelScope.launch {
+            val puppyId = puppyData.value?.id ?: return@launch
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            hospitalVisitDao.insert(
+                HospitalVisitEntity(
+                    puppyId = puppyId,
+                    date = today,
+                    hospitalName = hospitalName,
+                    visitReason = visitReason,
+                    diagnosis = diagnosis,
+                    treatment = treatment,
+                    prescription = prescription,
+                    cost = cost,
+                    nextVisitDate = nextVisitDate,
+                    note = note
+                )
+            )
+            checkAndUpdateAchievements()
+        }
+    }
+
+    fun deleteHospitalVisit(id: Long) {
+        viewModelScope.launch {
+            hospitalVisitDao.deleteById(id)
+        }
+    }
+
+    fun updateHospitalVisit(
+        id: Long,
+        hospitalName: String,
+        visitReason: String,
+        diagnosis: String?,
+        treatment: String?,
+        prescription: String?,
+        cost: Int?,
+        nextVisitDate: String?,
+        note: String?
+    ) {
+        viewModelScope.launch {
+            val puppyId = puppyData.value?.id ?: return@launch
+            val existing = hospitalVisits.value.find { it.id == id } ?: return@launch
+            hospitalVisitDao.update(
+                HospitalVisitEntity(
+                    id = id,
+                    puppyId = puppyId,
+                    date = existing.date,
+                    hospitalName = hospitalName,
+                    visitReason = visitReason,
+                    diagnosis = diagnosis,
+                    treatment = treatment,
+                    prescription = prescription,
+                    cost = cost,
+                    nextVisitDate = nextVisitDate,
+                    note = note
+                )
+            )
+        }
+    }
+
+    // ==================== 투약 기록 ====================
+    fun addMedicationRecord(
+        medicationType: String,
+        medicationName: String,
+        nextDate: String? = null,
+        intervalDays: Int? = null,
+        note: String? = null
+    ) {
+        viewModelScope.launch {
+            val puppyId = puppyData.value?.id ?: return@launch
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            val insertedId = medicationRecordDao.insert(
+                MedicationRecordEntity(
+                    puppyId = puppyId,
+                    date = today,
+                    medicationType = medicationType,
+                    medicationName = medicationName,
+                    nextDate = nextDate,
+                    intervalDays = intervalDays,
+                    note = note
+                )
+            )
+
+            // 다음 투약일 알림 예약
+            if (nextDate != null) {
+                AlarmScheduler.scheduleMedicationAlarm(
+                    context = context,
+                    medicationName = medicationName,
+                    nextDate = nextDate,
+                    notificationId = (insertedId + 10000).toInt()
+                )
+            }
+        }
+    }
+
+    fun deleteMedicationRecord(id: Long) {
+        viewModelScope.launch {
+            AlarmScheduler.cancelMedicationAlarm(context, (id + 10000).toInt())
+            medicationRecordDao.deleteById(id)
+        }
+    }
+
+    fun updateMedicationRecord(
+        id: Long,
+        medicationType: String,
+        medicationName: String,
+        nextDate: String?,
+        intervalDays: Int?,
+        note: String?
+    ) {
+        viewModelScope.launch {
+            val puppyId = puppyData.value?.id ?: return@launch
+            val existing = medicationRecords.value.find { it.id == id } ?: return@launch
+
+            AlarmScheduler.cancelMedicationAlarm(context, (id + 10000).toInt())
+
+            medicationRecordDao.update(
+                MedicationRecordEntity(
+                    id = id,
+                    puppyId = puppyId,
+                    date = existing.date,
+                    medicationType = medicationType,
+                    medicationName = medicationName,
+                    nextDate = nextDate,
+                    intervalDays = intervalDays,
+                    note = note
+                )
+            )
+
+            if (nextDate != null) {
+                AlarmScheduler.scheduleMedicationAlarm(
+                    context = context,
+                    medicationName = medicationName,
+                    nextDate = nextDate,
+                    notificationId = (id + 10000).toInt()
+                )
+            }
+        }
+    }
+
+    // ==================== 긴급 연락처 ====================
+    fun addEmergencyContact(
+        contactType: String,
+        name: String,
+        phoneNumber: String,
+        address: String? = null,
+        note: String? = null
+    ) {
+        viewModelScope.launch {
+            val puppyId = puppyData.value?.id ?: return@launch
+            emergencyContactDao.insert(
+                EmergencyContactEntity(
+                    puppyId = puppyId,
+                    contactType = contactType,
+                    name = name,
+                    phoneNumber = phoneNumber,
+                    address = address,
+                    note = note
+                )
+            )
+        }
+    }
+
+    fun deleteEmergencyContact(id: Long) {
+        viewModelScope.launch {
+            emergencyContactDao.deleteById(id)
+        }
+    }
+
+    fun updateEmergencyContact(
+        id: Long,
+        contactType: String,
+        name: String,
+        phoneNumber: String,
+        address: String?,
+        note: String?
+    ) {
+        viewModelScope.launch {
+            val puppyId = puppyData.value?.id ?: return@launch
+            emergencyContactDao.update(
+                EmergencyContactEntity(
+                    id = id,
+                    puppyId = puppyId,
+                    contactType = contactType,
+                    name = name,
+                    phoneNumber = phoneNumber,
+                    address = address,
+                    note = note
+                )
+            )
+        }
+    }
+
+    // ==================== 업적 체크 및 업데이트 ====================
+    private suspend fun checkAndUpdateAchievements() {
+        val puppyId = puppyData.value?.id ?: return
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+
+        // 각 카테고리별 개수 조회
+        val diaryCount = diaryEntryDao.getEntriesByPuppyOnce(puppyId).size
+        val weightCount = weightRecordDao.getRecordsByPuppyOnce(puppyId).size
+        val vaccineList = vaccinationDao.getVaccinationsByPuppyOnce(puppyId)
+        val vaccineCount = vaccineList.size
+        val completedVaccineCount = vaccineList.count { it.completed }
+        val photoCount = photoMemoryDao.getPhotosByPuppyOnce(puppyId).size
+        val walkCount = walkRecordDao.getCountByPuppy(puppyId)
+        val mealCount = mealRecordDao.getCountByPuppy(puppyId)
+        val hospitalCount = hospitalVisitDao.getCountByPuppy(puppyId)
+
+        // 모든 업적 체크 결과 수집
+        val allResults = mutableListOf<AchievementManager.AchievementCheckResult>()
+        allResults.addAll(AchievementManager.checkDiaryAchievements(diaryCount))
+        allResults.addAll(AchievementManager.checkWeightAchievements(weightCount))
+        allResults.addAll(AchievementManager.checkVaccinationAchievements(vaccineCount, completedVaccineCount))
+        allResults.addAll(AchievementManager.checkPhotoAchievements(photoCount))
+        allResults.addAll(AchievementManager.checkWalkAchievements(walkCount))
+        allResults.addAll(AchievementManager.checkMealAchievements(mealCount))
+        allResults.addAll(AchievementManager.checkHospitalAchievements(hospitalCount))
+
+        // 업적 업데이트
+        for (result in allResults) {
+            val existing = achievementDao.getAchievementById(result.achievementId) ?: continue
+            if (existing.progress != result.progress || existing.isUnlocked != result.isUnlocked) {
+                achievementDao.update(
+                    existing.copy(
+                        progress = result.progress,
+                        isUnlocked = result.isUnlocked,
+                        unlockedDate = if (result.isUnlocked && existing.unlockedDate == null) today else existing.unlockedDate
+                    )
+                )
+            }
+        }
+    }
+
     fun setDateRange(range: DateRange) {
         selectedDateRange.value = range
     }
 
-    // 통계 계산
+    // ==================== 통계 계산 ====================
     fun calculateAge(): String {
         val puppy = puppyData.value ?: return "알 수 없음"
         return try {
@@ -523,7 +984,7 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
             val daysUntilBirthday = (diffInMillis / (1000 * 60 * 60 * 24)).toInt()
 
             when {
-                daysUntilBirthday == 0 -> "오늘 생일! 🎉"
+                daysUntilBirthday == 0 -> "오늘 생일!"
                 daysUntilBirthday <= 30 -> "D-$daysUntilBirthday"
                 else -> null
             }
@@ -552,6 +1013,23 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
         val vaccinationScore = calculateVaccinationScore()
         val activityScore = calculateActivityScore()
         return ((weightScore + vaccinationScore + activityScore) / 3.0).toInt()
+    }
+
+    // 오늘 산책 시간 합계
+    fun getTodayWalkMinutes(): Int {
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        return walkRecords.value.filter { it.date == today }.sumOf { it.durationMinutes }
+    }
+
+    // 오늘 식사 횟수
+    fun getTodayMealCount(): Int {
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        return mealRecords.value.count { it.date == today }
+    }
+
+    // 총 병원 비용
+    fun getTotalHospitalCost(): Int {
+        return hospitalVisits.value.mapNotNull { it.cost }.sum()
     }
 
     private fun calculateWeightScore(): Int {

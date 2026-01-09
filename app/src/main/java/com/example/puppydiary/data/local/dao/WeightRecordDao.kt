@@ -18,6 +18,9 @@ interface WeightRecordDao {
     @Query("SELECT * FROM weight_records WHERE puppyId = :puppyId ORDER BY date DESC LIMIT 1")
     suspend fun getLatestWeightRecord(puppyId: Long): WeightRecordEntity?
 
+    @Query("SELECT * FROM weight_records WHERE puppyId = :puppyId ORDER BY date ASC")
+    suspend fun getRecordsByPuppyOnce(puppyId: Long): List<WeightRecordEntity>
+
     // LIKE 검색 (날짜로 검색)
     @Query("SELECT * FROM weight_records WHERE puppyId = :puppyId AND date LIKE '%' || :query || '%' ORDER BY date DESC")
     fun searchByPuppy(puppyId: Long, query: String): Flow<List<WeightRecordEntity>>
