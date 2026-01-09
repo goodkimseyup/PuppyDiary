@@ -14,11 +14,11 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.puppydiary"
+        applicationId = "com.puppydiary.app"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -26,13 +26,24 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("../keystore/puppydiary-release.jks")
+            storePassword = "puppydiary123"
+            keyAlias = "puppydiary"
+            keyPassword = "puppydiary123"
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
