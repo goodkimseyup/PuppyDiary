@@ -4,68 +4,124 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    
-    <!-- 강아지 얼굴 -->
-    <path
-        android:fillColor="#8B4513"
-        android:pathData="M54,38c12,0 22,10 22,22c0,12 -10,18 -22,18c-12,0 -22,-6 -22,-18c0,-12 10,-22 22,-22z"/>
-    
-    <!-- 왼쪽 귀 -->
-    <path
-        android:fillColor="#654321"
-        android:pathData="M32,35c-4,-8 -12,-12 -14,-8c-2,4 2,14 8,20c4,4 10,4 10,0c0,-4 0,-8 -4,-12z"/>
-    
-    <!-- 오른쪽 귀 -->
-    <path
-        android:fillColor="#654321"
-        android:pathData="M76,35c4,-8 12,-12 14,-8c2,4 -2,14 -8,20c-4,4 -10,4 -10,0c0,-4 0,-8 4,-12z"/>
-    
-    <!-- 왼쪽 눈 -->
+
+    <!-- 그림자 -->
     <path
         android:fillColor="#000000"
-        android:pathData="M44,52m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"/>
-    
-    <!-- 오른쪽 눈 -->
+        android:fillAlpha="0.1"
+        android:pathData="M54,82c14,0 25,-3 25,-6c0,-3 -11,-3 -25,-3c-14,0 -25,0 -25,3c0,3 11,6 25,6z"/>
+
+    <!-- 왼쪽 귀 (뒤) -->
     <path
-        android:fillColor="#000000"
-        android:pathData="M64,52m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"/>
-    
-    <!-- 눈 반짝임 왼쪽 -->
+        android:fillColor="#D4A574"
+        android:pathData="M30,42c-6,-10 -10,-18 -6,-22c4,-4 14,2 20,12c2,4 2,8 -2,10c-4,2 -10,4 -12,0z"/>
+
+    <!-- 왼쪽 귀 안쪽 -->
+    <path
+        android:fillColor="#FFB6C1"
+        android:pathData="M30,38c-3,-6 -5,-10 -3,-12c2,-2 7,1 10,7c1,2 1,4 -1,5c-2,1 -5,2 -6,0z"/>
+
+    <!-- 오른쪽 귀 (뒤) -->
+    <path
+        android:fillColor="#D4A574"
+        android:pathData="M78,42c6,-10 10,-18 6,-22c-4,-4 -14,2 -20,12c-2,4 -2,8 2,10c4,2 10,4 12,0z"/>
+
+    <!-- 오른쪽 귀 안쪽 -->
+    <path
+        android:fillColor="#FFB6C1"
+        android:pathData="M78,38c3,-6 5,-10 3,-12c-2,-2 -7,1 -10,7c-1,2 -1,4 1,5c2,1 5,2 6,0z"/>
+
+    <!-- 메인 얼굴 -->
+    <path
+        android:fillColor="#F5DEB3"
+        android:pathData="M54,36c16,0 28,12 28,26c0,14 -12,22 -28,22c-16,0 -28,-8 -28,-22c0,-14 12,-26 28,-26z"/>
+
+    <!-- 얼굴 하이라이트 -->
+    <path
+        android:fillColor="#FFF8DC"
+        android:pathData="M54,38c12,0 22,8 24,18c-4,-8 -14,-14 -24,-14c-10,0 -20,6 -24,14c2,-10 12,-18 24,-18z"/>
+
+    <!-- 이마 무늬 -->
+    <path
+        android:fillColor="#D4A574"
+        android:pathData="M54,40c6,0 10,3 10,6c0,2 -4,4 -10,4c-6,0 -10,-2 -10,-4c0,-3 4,-6 10,-6z"/>
+
+    <!-- 왼쪽 눈 흰자 -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M42,50m-1.5,0a1.5,1.5 0,1 1,3 0a1.5,1.5 0,1 1,-3 0"/>
-    
-    <!-- 눈 반짝임 오른쪽 -->
+        android:pathData="M42,54m-7,0a7,8 0,1 1,14 0a7,8 0,1 1,-14 0"/>
+
+    <!-- 오른쪽 눈 흰자 -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M62,50m-1.5,0a1.5,1.5 0,1 1,3 0a1.5,1.5 0,1 1,-3 0"/>
-    
+        android:pathData="M66,54m-7,0a7,8 0,1 1,14 0a7,8 0,1 1,-14 0"/>
+
+    <!-- 왼쪽 눈동자 -->
+    <path
+        android:fillColor="#4A3728"
+        android:pathData="M43,55m-5,0a5,6 0,1 1,10 0a5,6 0,1 1,-10 0"/>
+
+    <!-- 오른쪽 눈동자 -->
+    <path
+        android:fillColor="#4A3728"
+        android:pathData="M65,55m-5,0a5,6 0,1 1,10 0a5,6 0,1 1,-10 0"/>
+
+    <!-- 왼쪽 눈 반짝임 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M41,52m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0"/>
+
+    <!-- 오른쪽 눈 반짝임 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M63,52m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0"/>
+
     <!-- 코 -->
     <path
-        android:fillColor="#000000"
-        android:pathData="M54,58c3,0 5,2 5,4c0,2 -2,3 -5,3c-3,0 -5,-1 -5,-3c0,-2 2,-4 5,-4z"/>
-    
-    <!-- 코 반짝임 -->
+        android:fillColor="#4A3728"
+        android:pathData="M54,62c4,0 7,2 7,5c0,3 -3,5 -7,5c-4,0 -7,-2 -7,-5c0,-3 3,-5 7,-5z"/>
+
+    <!-- 코 하이라이트 -->
     <path
-        android:fillColor="#333333"
-        android:pathData="M52,59m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0"/>
-    
-    <!-- 입 -->
-    <path
-        android:fillColor="@android:color/transparent"
-        android:strokeColor="#000000"
-        android:strokeWidth="1.5"
-        android:pathData="M54,65c0,0 -6,4 -8,2"/>
-    
+        android:fillColor="#6B5344"
+        android:pathData="M51,63m-1.5,0a1.5,1.5 0,1 1,3 0a1.5,1.5 0,1 1,-3 0"/>
+
+    <!-- 입 왼쪽 -->
     <path
         android:fillColor="@android:color/transparent"
-        android:strokeColor="#000000"
-        android:strokeWidth="1.5"
-        android:pathData="M54,65c0,0 6,4 8,2"/>
-    
+        android:strokeColor="#4A3728"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M54,72Q46,78 42,74"/>
+
+    <!-- 입 오른쪽 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#4A3728"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M54,72Q62,78 66,74"/>
+
     <!-- 혀 -->
     <path
-        android:fillColor="#FF6B6B"
-        android:pathData="M54,66c2,0 3,1 3,3c0,3 -1,5 -3,5c-2,0 -3,-2 -3,-5c0,-2 1,-3 3,-3z"/>
+        android:fillColor="#FF8A9B"
+        android:pathData="M54,72c3,0 5,2 5,5c0,4 -2,6 -5,6c-3,0 -5,-2 -5,-6c0,-3 2,-5 5,-5z"/>
+
+    <!-- 혀 하이라이트 -->
+    <path
+        android:fillColor="#FFA0AF"
+        android:pathData="M52,74m-1,0a1,2 0,1 1,2 0a1,2 0,1 1,-2 0"/>
+
+    <!-- 왼쪽 볼터치 -->
+    <path
+        android:fillColor="#FFB6C1"
+        android:fillAlpha="0.5"
+        android:pathData="M32,60m-4,0a4,3 0,1 1,8 0a4,3 0,1 1,-8 0"/>
+
+    <!-- 오른쪽 볼터치 -->
+    <path
+        android:fillColor="#FFB6C1"
+        android:fillAlpha="0.5"
+        android:pathData="M76,60m-4,0a4,3 0,1 1,8 0a4,3 0,1 1,-8 0"/>
 
 </vector>

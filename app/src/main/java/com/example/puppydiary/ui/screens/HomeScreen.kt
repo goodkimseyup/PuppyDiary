@@ -50,7 +50,9 @@ val breedList = allBreedList
 @Composable
 fun HomeScreen(
     viewModel: PuppyViewModel,
-    onNavigateToGallery: () -> Unit = { }
+    onNavigateToGallery: () -> Unit = { },
+    onNavigateToAIChat: () -> Unit = { },
+    onNavigateToHealthReport: () -> Unit = { }
 ) {
     val context = LocalContext.current
     val puppyData by viewModel.puppyData.collectAsState()
@@ -295,38 +297,61 @@ fun HomeScreen(
             }
 
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    QuickActionButton(
-                        icon = Icons.Default.Star,
-                        label = "몸무게",
-                        color = Color(0xFF2196F3),
-                        modifier = Modifier.weight(1f),
-                        onClick = { showWeightDialog = true }
-                    )
-                    QuickActionButton(
-                        icon = Icons.Default.Favorite,
-                        label = "접종",
-                        color = Color(0xFF4CAF50),
-                        modifier = Modifier.weight(1f),
-                        onClick = { showVaccineDialog = true }
-                    )
-                    QuickActionButton(
-                        icon = Icons.Default.Edit,
-                        label = "일기",
-                        color = Color(0xFF9C27B0),
-                        modifier = Modifier.weight(1f),
-                        onClick = { showDiaryDialog = true }
-                    )
-                    QuickActionButton(
-                        icon = Icons.Default.Face,
-                        label = "사진첩",
-                        color = Color(0xFFE91E63),
-                        modifier = Modifier.weight(1f),
-                        onClick = { onNavigateToGallery() }
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        QuickActionButton(
+                            icon = Icons.Default.Star,
+                            label = "몸무게",
+                            color = Color(0xFF2196F3),
+                            modifier = Modifier.weight(1f),
+                            onClick = { showWeightDialog = true }
+                        )
+                        QuickActionButton(
+                            icon = Icons.Default.Favorite,
+                            label = "접종",
+                            color = Color(0xFF4CAF50),
+                            modifier = Modifier.weight(1f),
+                            onClick = { showVaccineDialog = true }
+                        )
+                        QuickActionButton(
+                            icon = Icons.Default.Edit,
+                            label = "일기",
+                            color = Color(0xFF9C27B0),
+                            modifier = Modifier.weight(1f),
+                            onClick = { showDiaryDialog = true }
+                        )
+                        QuickActionButton(
+                            icon = Icons.Default.Face,
+                            label = "사진첩",
+                            color = Color(0xFFE91E63),
+                            modifier = Modifier.weight(1f),
+                            onClick = { onNavigateToGallery() }
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        QuickActionButton(
+                            icon = Icons.Default.Info,
+                            label = "건강리포트",
+                            color = Color(0xFF00BCD4),
+                            modifier = Modifier.weight(1f),
+                            onClick = { onNavigateToHealthReport() }
+                        )
+                        QuickActionButton(
+                            icon = Icons.Default.Send,
+                            label = "AI상담",
+                            color = Color(0xFFFF5722),
+                            modifier = Modifier.weight(1f),
+                            onClick = { onNavigateToAIChat() }
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
             }
 

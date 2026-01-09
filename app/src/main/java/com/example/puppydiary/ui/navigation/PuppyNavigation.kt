@@ -48,10 +48,14 @@ fun PuppyNavigation(
         
         // 사진첩 표시 상태
         var showGallery by remember { mutableStateOf(false) }
+        // AI 챗봇 표시 상태
+        var showAIChat by remember { mutableStateOf(false) }
+        // 건강 리포트 표시 상태
+        var showHealthReport by remember { mutableStateOf(false) }
 
         Scaffold(
             bottomBar = {
-                if (!showGallery) {
+                if (!showGallery && !showAIChat && !showHealthReport) {
                     BottomNavigationWithPager(
                         pagerState = pagerState,
                         onPageSelected = { page ->
@@ -63,31 +67,49 @@ fun PuppyNavigation(
                 }
             }
         ) { innerPadding ->
-            if (showGallery) {
-                // 사진첩 전체 화면
-                PhotoGalleryScreen(
-                    viewModel = viewModel,
-                    onBack = { showGallery = false }
-                )
-            } else {
-                // 메인 Pager (스와이프 가능)
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                ) { page ->
-                    when (page) {
-                        0 -> HomeScreen(
-                            viewModel = viewModel,
-                            onNavigateToGallery = { showGallery = true }
-                        )
-                        1 -> StatsScreen(viewModel = viewModel)
-                        2 -> DiaryScreen(viewModel = viewModel)
-                        3 -> SettingsScreen(
-                            isDarkMode = isDarkMode,
-                            onDarkModeChange = onDarkModeChange
-                        )
+            when {
+                showGallery -> {
+                    // 사진첩 전체 화면
+                    PhotoGalleryScreen(
+                        viewModel = viewModel,
+                        onBack = { showGallery = false }
+                    )
+                }
+                showAIChat -> {
+                    // AI 챗봇 화면
+                    AIChatScreen(
+                        onNavigateBack = { showAIChat = false }
+                    )
+                }
+                showHealthReport -> {
+                    // 건강 리포트 화면
+                    HealthReportScreen(
+                        viewModel = viewModel,
+                        onNavigateBack = { showHealthReport = false }
+                    )
+                }
+                else -> {
+                    // 메인 Pager (스와이프 가능)
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                    ) { page ->
+                        when (page) {
+                            0 -> HomeScreen(
+                                viewModel = viewModel,
+                                onNavigateToGallery = { showGallery = true },
+                                onNavigateToAIChat = { showAIChat = true },
+                                onNavigateToHealthReport = { showHealthReport = true }
+                            )
+                            1 -> StatsScreen(viewModel = viewModel)
+                            2 -> DiaryScreen(viewModel = viewModel)
+                            3 -> SettingsScreen(
+                                isDarkMode = isDarkMode,
+                                onDarkModeChange = onDarkModeChange
+                            )
+                        }
                     }
                 }
             }
