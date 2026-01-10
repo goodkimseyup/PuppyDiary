@@ -30,6 +30,7 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
     private val hospitalVisitDao = database.hospitalVisitDao()
     private val medicationRecordDao = database.medicationRecordDao()
     private val emergencyContactDao = database.emergencyContactDao()
+    private val allergyDao = database.allergyDao()
 
     init {
         // 앱 시작 시 기본 업적 초기화
@@ -200,6 +201,20 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
         }
         .map { entities ->
             entities.map { EmergencyContact(it.id, it.contactType, it.name, it.phoneNumber, it.address, it.note) }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // 선택된 강아지의 알러지
+    val allergies: StateFlow<List<Allergy>> = puppyData
+        .flatMapLatest { puppy ->
+            if (puppy != null) {
+                allergyDao.getAllergiesByPuppyId(puppy.id)
+            } else {
+                flowOf(emptyList())
+            }
+        }
+        .map { entities ->
+            entities.map { Allergy(it.id, it.puppyId, it.allergyName, it.severity, it.symptoms, it.diagnosedDate, it.notes) }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -1064,6 +1079,46 @@ class PuppyViewModel(application: Application) : AndroidViewModel(application) {
             entriesPerDay >= 0.2f -> 60
             entriesPerDay >= 0.1f -> 40
             else -> 20
+        }
+    }
+
+    // 알러지 관련 함수
+    fun addAllergy(allergyName: String, severity: String, symptoms: String, diagnosedDate: String, notes: String = "") {
+        viewModelScope.launch {
+            puppyData.value?.let { puppy ->
+                val entity = AllergyEntity(
+                    puppyId = puppy.id,
+                    allergyName = allergyName,
+                    severity = severity,
+                    symptoms = symptoms,
+                    diagnosedDate = diagnosedDate,
+                    notes = notes
+                )
+                allergyDao.insert(entity)
+            }
+        }
+    }
+
+    fun updateAllergy(id: Long, allergyName: String, severity: String, symptoms: String, diagnosedDate: String, notes: String) {
+        viewModelScope.launch {
+            puppyData.value?.let { puppy ->
+                val entity = AllergyEntity(
+                    id = id,
+                    puppyId = puppy.id,
+                    allergyName = allergyName,
+                    severity = severity,
+                    symptoms = symptoms,
+                    diagnosedDate = diagnosedDate,
+                    notes = notes
+                )
+                allergyDao.update(entity)
+            }
+        }
+    }
+
+    fun deleteAllergy(id: Long) {
+        viewModelScope.launch {
+            allergyDao.deleteById(id)
         }
     }
 }

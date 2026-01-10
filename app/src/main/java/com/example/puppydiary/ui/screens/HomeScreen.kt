@@ -118,6 +118,13 @@ fun HomeScreen(
     var editDiaryPhotoPath by remember { mutableStateOf<String?>(null) }
     var newDiaryPhotoPath by remember { mutableStateOf<String?>(null) }
 
+    // 알러지 다이얼로그 상태
+    var showAllergyDialog by remember { mutableStateOf(false) }
+    var allergyNameInput by remember { mutableStateOf("") }
+    var allergySeverityInput by remember { mutableStateOf("mild") }
+    var allergySymptomsInput by remember { mutableStateOf("") }
+    var allergyNotesInput by remember { mutableStateOf("") }
+
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
     val birthDatePickerState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
 
@@ -349,7 +356,13 @@ fun HomeScreen(
                             modifier = Modifier.weight(1f),
                             onClick = { onNavigateToAIChat() }
                         )
-                        Spacer(modifier = Modifier.weight(1f))
+                        QuickActionButton(
+                            icon = Icons.Default.Warning,
+                            label = "알러지",
+                            color = Color(0xFFF44336),
+                            modifier = Modifier.weight(1f),
+                            onClick = { showAllergyDialog = true }
+                        )
                         Spacer(modifier = Modifier.weight(1f))
                     }
                 }
@@ -906,6 +919,88 @@ fun HomeScreen(
                     TextButton(onClick = { viewModel.deleteDiaryEntry(selectedDiaryEntry!!.id); showEditDiaryDialog = false; scope.launch { snackbarHostState.showSnackbar("일기가 삭제되었습니다") } }, colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)) { Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp)); Spacer(modifier = Modifier.width(4.dp)); Text("삭제") }
                     TextButton(onClick = { showEditDiaryDialog = false }) { Text("취소") }
                 }
+            }
+        )
+    }
+
+    // 알러지 추가 다이얼로그
+    if (showAllergyDialog) {
+        AlertDialog(
+            onDismissRequest = { showAllergyDialog = false },
+            title = { Text("🚨 알러지 등록", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = allergyNameInput,
+                        onValueChange = { allergyNameInput = it },
+                        label = { Text("알러지 원인") },
+                        placeholder = { Text("예: 닭고기, 밀, 꽃가루 등") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Text("심각도", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = allergySeverityInput == "mild",
+                            onClick = { allergySeverityInput = "mild" },
+                            label = { Text("🟡 경미") }
+                        )
+                        FilterChip(
+                            selected = allergySeverityInput == "moderate",
+                            onClick = { allergySeverityInput = "moderate" },
+                            label = { Text("🟠 보통") }
+                        )
+                        FilterChip(
+                            selected = allergySeverityInput == "severe",
+                            onClick = { allergySeverityInput = "severe" },
+                            label = { Text("🔴 심각") }
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = allergySymptomsInput,
+                        onValueChange = { allergySymptomsInput = it },
+                        label = { Text("증상") },
+                        placeholder = { Text("예: 피부 가려움, 구토, 설사 등") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2
+                    )
+
+                    OutlinedTextField(
+                        value = allergyNotesInput,
+                        onValueChange = { allergyNotesInput = it },
+                        label = { Text("메모 (선택)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (allergyNameInput.isNotEmpty() && allergySymptomsInput.isNotEmpty()) {
+                            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                            viewModel.addAllergy(
+                                allergyName = allergyNameInput,
+                                severity = allergySeverityInput,
+                                symptoms = allergySymptomsInput,
+                                diagnosedDate = today,
+                                notes = allergyNotesInput
+                            )
+                            allergyNameInput = ""
+                            allergySeverityInput = "mild"
+                            allergySymptomsInput = ""
+                            allergyNotesInput = ""
+                            showAllergyDialog = false
+                            scope.launch { snackbarHostState.showSnackbar("알러지가 등록되었습니다") }
+                        }
+                    },
+                    enabled = allergyNameInput.isNotEmpty() && allergySymptomsInput.isNotEmpty()
+                ) { Text("등록") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAllergyDialog = false }) { Text("취소") }
             }
         )
     }

@@ -1,5 +1,6 @@
 package com.example.puppydiary.ui.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -8,9 +9,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.example.puppydiary.ui.components.BottomNavigation
 import com.example.puppydiary.ui.components.BottomNavigationWithPager
 import com.example.puppydiary.ui.screens.*
@@ -25,7 +23,6 @@ fun PuppyNavigation(
     onDarkModeChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val navController = rememberNavController()
     val puppyData by viewModel.puppyData.collectAsState()
     val allPuppies by viewModel.allPuppies.collectAsState()
     val scope = rememberCoroutineScope()
@@ -52,6 +49,20 @@ fun PuppyNavigation(
         var showAIChat by remember { mutableStateOf(false) }
         // 건강 리포트 표시 상태
         var showHealthReport by remember { mutableStateOf(false) }
+
+        // 뒤로 가기 버튼 처리
+        BackHandler(enabled = showGallery || showAIChat || showHealthReport || pagerState.currentPage != 0) {
+            when {
+                showGallery -> showGallery = false
+                showAIChat -> showAIChat = false
+                showHealthReport -> showHealthReport = false
+                pagerState.currentPage != 0 -> {
+                    scope.launch {
+                        pagerState.animateScrollToPage(0)
+                    }
+                }
+            }
+        }
 
         Scaffold(
             bottomBar = {

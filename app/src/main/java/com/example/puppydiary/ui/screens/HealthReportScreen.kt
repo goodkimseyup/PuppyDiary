@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.puppydiary.data.model.Allergy
 import com.example.puppydiary.ui.theme.AppColors
 import com.example.puppydiary.utils.HealthAnalyzer
 import com.example.puppydiary.viewmodel.PuppyViewModel
@@ -38,6 +39,7 @@ fun HealthReportScreen(
     val mealRecords by viewModel.mealRecords.collectAsState()
     val vaccinations by viewModel.vaccinations.collectAsState()
     val medicationRecords by viewModel.medicationRecords.collectAsState()
+    val allergies by viewModel.allergies.collectAsState()
 
     val healthReport = remember(puppyData, weightRecords, walkRecords, mealRecords, vaccinations, medicationRecords) {
         puppyData?.let { puppy ->
@@ -108,6 +110,13 @@ fun HealthReportScreen(
 
                     items(report.alerts) { alert ->
                         AlertCard(alert = alert)
+                    }
+                }
+
+                // 알러지 정보
+                if (allergies.isNotEmpty()) {
+                    item {
+                        AllergyInfoCard(allergies = allergies)
                     }
                 }
 
@@ -394,6 +403,124 @@ fun RecommendationsCard(recommendations: List<String>) {
                         text = recommendation,
                         fontSize = 14.sp,
                         color = Color(0xFF444444)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AllergyInfoCard(allergies: List<Allergy>) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = "⚠️", fontSize = 24.sp)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "알러지 정보",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = "${allergies.size}개",
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            allergies.forEach { allergy ->
+                AllergyRow(allergy = allergy)
+                if (allergy != allergies.last()) {
+                    Spacer(Modifier.height(12.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AllergyRow(allergy: Allergy) {
+    val severityColor = when (allergy.severity) {
+        "mild" -> Color(0xFFFFC107)      // 노란색
+        "moderate" -> Color(0xFFFF9800)  // 주황색
+        "severe" -> Color(0xFFF44336)    // 빨간색
+        else -> Color.Gray
+    }
+
+    val severityBackgroundColor = when (allergy.severity) {
+        "mild" -> Color(0xFFFFF8E1)
+        "moderate" -> Color(0xFFFFF3E0)
+        "severe" -> Color(0xFFFFEBEE)
+        else -> Color(0xFFF5F5F5)
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = severityBackgroundColor)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = allergy.getSeverityEmoji(),
+                fontSize = 20.sp
+            )
+
+            Spacer(Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = allergy.allergyName,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF333333)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(severityColor.copy(alpha = 0.2f))
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = allergy.getSeverityText(),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = severityColor
+                        )
+                    }
+                }
+
+                if (allergy.symptoms.isNotEmpty()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "증상: ${allergy.symptoms}",
+                        fontSize = 13.sp,
+                        color = Color(0xFF666666)
+                    )
+                }
+
+                if (allergy.notes.isNotEmpty()) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = allergy.notes,
+                        fontSize = 12.sp,
+                        color = Color.Gray
                     )
                 }
             }
